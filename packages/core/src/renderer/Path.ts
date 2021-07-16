@@ -17,25 +17,9 @@ const toCmdString = (cmd: any, canvasSize: [number, number]) => {
       return pathCommandString("Q", cmd.contents, canvasSize);
     case "QuadBezJoin":
       return pathCommandString("T", cmd.contents, canvasSize);
-    case "Arc":
-      return arcCommandString("A", cmd.contents, canvasSize);
     default:
       return " ";
   }
-};
-
-const arcCommandString = (
-  command: string,
-  pts: [number, number][],
-  canvasSize: [number, number]
-) => {
-  // See: https://css-tricks.com/svg-path-syntax-illustrated-guide/ for the "A" spec.
-  const [radius, flags, endpt] = pts;
-  // A, rx, ry, rotation, arc, sweep, ex, ey
-  return `${command} ${radius.join(" ")} ${flags.join(" ")} ${toScreen(
-    endpt,
-    canvasSize
-  ).join(" ")}`;
 };
 
 const pathCommandString = (

@@ -1,13 +1,12 @@
 import * as React from "react";
 import { round, cloneDeep } from "lodash";
-import { Canvas, ShapeTypes, toHex } from "@penrose/core";
+import { ShapeTypes, toHex } from "@penrose/core";
 
 interface IProps {
   inputProps: IInputProps;
   eAttr: string;
   eValue: ShapeTypes.Value<any>; // is this the best typing?
   modAttr(attrname: string, attrval: ShapeTypes.Value<any>): void;
-  canvas: Canvas;
 }
 
 type InputType =
@@ -33,24 +32,24 @@ interface IInputProps {
   options?: string[];
 }
 
-const toCanvas = (jsonVal: string, canvas: Canvas): string => {
+// if we move to not hardcoding canvas size this needs to be changed
+// returns number corresponding to x/y coord boundary of canvas if necessary
+const toCanvas = (jsonVal: string): string => {
+  // const cdiv = document.getElementsByClassName("Pane1")[0];
+  // todo check safety
+  // const cwidth = parseInt(window.getComputedStyle(cdiv).getPropertyValue("width"), 10),
+  //       cheight = parseInt(window.getComputedStyle(cdiv).getPropertyValue("height"), 10);
+  const cwidth = 800,
+    cheight = 700;
   switch (jsonVal) {
-    case "CANVAS_MIN_X":
-      return (-canvas.width / 2).toString();
-    case "CANVAS_MAX_X":
-      return (canvas.width / 2).toString();
-    case "CANVAS_MIN_Y":
-      return (-canvas.height / 2).toString();
-    case "CANVAS_MAX_Y":
-      return (canvas.height / 2).toString();
-    case "CANVAS_MIN_DIM":
-      return Math.min(canvas.width, canvas.height).toString();
-    case "CANVAS_HALF_MIN_DIM":
-      return (Math.min(canvas.width, canvas.height) / 2).toString();
-    case "CANVAS_WIDTH":
-      return canvas.width.toString();
-    case "CANVAS_HEIGHT":
-      return canvas.height.toString();
+    case "CANVASL":
+      return (-cwidth / 2).toString();
+    case "CANVASR":
+      return (cwidth / 2).toString();
+    case "CANVASB":
+      return (-cheight / 2).toString();
+    case "CANVAST":
+      return (cheight / 2).toString();
     default:
       return jsonVal;
   }
@@ -179,14 +178,14 @@ class LabeledInput extends React.Component<IProps> {
   };
   // todo - maybe make toCanvas definable in JSON? range doesn't cover all possible use cases for toCanvas
   public makeRange = () => {
-    const { inputProps, eAttr, canvas } = this.props;
+    const { inputProps, eAttr } = this.props;
     return (
       <input
         id={eAttr}
         type="range"
         onChange={(e) => this.handleChange(eAttr, e)}
-        min={toCanvas(inputProps.min!, canvas)}
-        max={toCanvas(inputProps.max!, canvas)}
+        min={toCanvas(inputProps.min!)}
+        max={toCanvas(inputProps.max!)}
         value={round(this.props.eValue.contents)}
       />
     );
@@ -207,7 +206,7 @@ class LabeledInput extends React.Component<IProps> {
     } else return <label htmlFor={id}>{ltxt}</label>;
   };
   public makeMulPointRange = () => {
-    const { inputProps, eAttr, canvas } = this.props;
+    const { inputProps, eAttr } = this.props;
     const subpaths = this.props.eValue.contents;
     if (subpaths.contents == undefined) {
       console.log("polygon pointrange mod unimplemented");
@@ -263,8 +262,8 @@ class LabeledInput extends React.Component<IProps> {
                         onChange={(e) =>
                           this.handleMulPtRange(eAttr, index, subindex, 0, e)
                         }
-                        min={toCanvas(inputProps.minX!, canvas)}
-                        max={toCanvas(inputProps.maxX!, canvas)}
+                        min={toCanvas(inputProps.minX!)}
+                        max={toCanvas(inputProps.maxX!)}
                         value={round(pt.contents[0] as number)}
                       />
                       {this.makeSubLabel(
@@ -284,8 +283,8 @@ class LabeledInput extends React.Component<IProps> {
                         onChange={(e) =>
                           this.handleMulPtRange(eAttr, index, subindex, 1, e)
                         }
-                        min={toCanvas(inputProps.minY!, canvas)}
-                        max={toCanvas(inputProps.maxY!, canvas)}
+                        min={toCanvas(inputProps.minY!)}
+                        max={toCanvas(inputProps.maxY!)}
                         value={round(pt.contents[1] as number)}
                       />
                       {this.makeSubLabel(
@@ -305,7 +304,7 @@ class LabeledInput extends React.Component<IProps> {
     );
   };
   public makePointRange = () => {
-    const { eAttr, inputProps, canvas } = this.props;
+    const { eAttr, inputProps } = this.props;
     const xid = "x_" + eAttr;
     const xspan = round(this.state.eValue.contents[0]).toString();
     const yspan = round(this.state.eValue.contents[1]).toString();
@@ -317,8 +316,8 @@ class LabeledInput extends React.Component<IProps> {
           <input
             type="range"
             id={xid}
-            min={toCanvas(inputProps.minX!, canvas)}
-            max={toCanvas(inputProps.maxX!, canvas)}
+            min={toCanvas(inputProps.minX!)}
+            max={toCanvas(inputProps.maxX!)}
             value={round(pt[0] as number)}
             onChange={(e) => this.handlePtRange(eAttr, 0, e)}
           />
@@ -333,8 +332,8 @@ class LabeledInput extends React.Component<IProps> {
           <input
             type="range"
             id={yid}
-            min={toCanvas(inputProps.minY!, canvas)}
-            max={toCanvas(inputProps.maxY!, canvas)}
+            min={toCanvas(inputProps.minY!)}
+            max={toCanvas(inputProps.maxY!)}
             value={round(pt[1] as number)}
             onChange={(e) => this.handlePtRange(eAttr, 1, e)}
           />
@@ -377,14 +376,14 @@ class LabeledInput extends React.Component<IProps> {
     );
   };
   public makeNumber = () => {
-    const { inputProps, eAttr, canvas } = this.props;
+    const { inputProps, eAttr } = this.props;
     return (
       <input
         type="number"
         id={eAttr}
         onChange={(e) => this.handleChange(eAttr, e)}
-        min={inputProps.min ? toCanvas(inputProps.min, canvas) : ""}
-        max={inputProps.max ? toCanvas(inputProps.max, canvas) : ""}
+        min={inputProps.min ? toCanvas(inputProps.min) : ""}
+        max={inputProps.max ? toCanvas(inputProps.max) : ""}
         value={this.props.eValue.contents}
       />
     );

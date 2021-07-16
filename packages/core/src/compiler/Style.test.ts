@@ -58,12 +58,6 @@ export const loadProgs = ([domainStr, subStr, styStr]: [
   return res;
 };
 
-const canvasPreamble = `canvas {
-  width = 800
-  height = 700
-}
-`;
-
 describe("Compiler", () => {
   // COMBAK: StyleTestData is deprecated. Make the data in the test file later (@hypotext).
   // // Each possible substitution should be full WRT its selector
@@ -270,9 +264,6 @@ describe("Compiler", () => {
        o.f[0] = 0.
        o.shape = Circle {}
 }`,
-      `canvas {
-  override width = 500.0
-}`,
     ];
 
     const domainRes: Result<Env, PenroseError> = compileDomain(domainProg);
@@ -284,7 +275,7 @@ describe("Compiler", () => {
 
     for (const styProg of styProgs) {
       const styRes: Result<State, PenroseError> = andThen(
-        (res) => S.compileStyle(canvasPreamble + styProg, ...res),
+        (res) => S.compileStyle(styProg, ...res),
         subRes
       );
 
@@ -345,9 +336,8 @@ describe("Compiler", () => {
     );
 
     const testStyProgForError = (styProg: string, errorType: string) => {
-      let preamble = errorType.startsWith("Canvas") ? "" : canvasPreamble;
       const styRes: Result<State, PenroseError> = andThen(
-        (res) => S.compileStyle(preamble + styProg, ...res),
+        (res) => S.compileStyle(styProg, ...res),
         subRes
       );
       describe(errorType, () => {
@@ -481,43 +471,6 @@ delete x.z.p }`,
         `forall Set x { 
            x.z = 1.0 
            x.y = x.z.p
-}`,
-      ],
-      CanvasNonexistentError: [
-        `foo { 
-  bar = 1.0
-}`,
-      ],
-      CanvasNonexistentDimsError: [
-        `canvas { 
-  height = 100
-}`,
-        `canvas {
-  width = Circle {}
-  height = 100
-}`,
-        `canvas {
-  width = ?
-  height = 100
-}`,
-        `canvas {
-  width = (1.0, 1.0)
-  height = 100
-}`,
-        `canvas { 
-  width = 100
-}`,
-        `canvas {
-  width = 100
-  height = Circle {}
-}`,
-        `canvas {
-  width = 100
-  height = ?
-}`,
-        `canvas {
-  width = 100
-  height = (1.0, 1.0)
 }`,
       ],
       // TODO: this test should _not_ fail, but it's failing because we are skipping `OptEval` checks for access paths

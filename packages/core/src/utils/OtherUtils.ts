@@ -112,44 +112,8 @@ export const prettyPrintExpr = (arg: Expr): string => {
     return [fnName, "(", ...fnArgs.map(prettyPrintExpr).join(", "), ")"].join(
       ""
     );
-  } else if (arg.tag === "UOp") {
-    let uOpName;
-    switch (arg.op) {
-      case "UMinus":
-        uOpName = "-";
-        break;
-    }
-    return "(" + uOpName + prettyPrintExpr(arg.arg) + ")";
-  } else if (arg.tag === "BinOp") {
-    let binOpName;
-    switch (arg.op) {
-      case "BPlus":
-        binOpName = "+";
-        break;
-      case "BMinus":
-        binOpName = "-";
-        break;
-      case "Multiply":
-        binOpName = "*";
-        break;
-      case "Divide":
-        binOpName = "/";
-        break;
-      case "Exp":
-        binOpName = "**";
-        break;
-    }
-    return (
-      "(" +
-      prettyPrintExpr(arg.left) +
-      " " +
-      binOpName +
-      " " +
-      prettyPrintExpr(arg.right) +
-      ")"
-    );
   } else {
-    // TODO: Finish writing pretty-printer for rest of expressions
+    // TODO: Finish writing pretty-printer for rest of expressions (UOp, BinOp)
     const res = JSON.stringify(arg);
     return res;
   }

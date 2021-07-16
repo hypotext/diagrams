@@ -42,10 +42,10 @@
     "pathData": {
       "inputType": "mulptrange",
       "showValue": "true",
-      "minX": "CANVAS_MIN_X",
-      "maxX": "CANVAS_MAX_X",
-      "minY": "CANVAS_MIN_Y",
-      "maxY": "CANVAS_MAX_Y"
+      "minX": "CANVASL",
+      "maxX": "CANVASR",
+      "minY": "CANVASB",
+      "maxY": "CANVAST"
     }
   }
 }

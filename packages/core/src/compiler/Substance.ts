@@ -587,8 +587,6 @@ export const prettyStmt = (stmt: SubStmt): string => {
       return `${prettyExpr(stmt.left)} = ${prettyExpr(stmt.right)}`;
     case "EqualPredicates":
       return `${prettyPredicate(stmt.left)} <-> ${prettyPredicate(stmt.right)}`;
-    default:
-      throw new Error(`unsupported substance statement type`);
   }
 };
 

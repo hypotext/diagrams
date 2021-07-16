@@ -3,29 +3,6 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [1.3.0](https://github.com/penrose/penrose/compare/v1.2.0...v1.3.0) (2021-06-24)
-
-
-### Bug Fixes
-
-* arrowheads incorporated in the path length ([#587](https://github.com/penrose/penrose/issues/587)) ([ba8ddf2](https://github.com/penrose/penrose/commit/ba8ddf2dab3e43d5bbfccdaf69042300b3a97562))
-* type-change in synthesizer was adding improperly formed bind statements to AST ([#590](https://github.com/penrose/penrose/issues/590)) ([b3c50a6](https://github.com/penrose/penrose/commit/b3c50a69856c7646b76dbf6a730bee30787eb3d1))
-* Unify BBox Computation in `Constraints.ts` and Make `Square` Rect-Like ([#582](https://github.com/penrose/penrose/issues/582)) ([cce0160](https://github.com/penrose/penrose/commit/cce01603f97dd1937467bca1e79a4d6c660cc2d2)), closes [#584](https://github.com/penrose/penrose/issues/584)
-
-
-### Features
-
-* add arc command to path shape object, implement tick marks for triangle congruency ([#603](https://github.com/penrose/penrose/issues/603)) ([b3190dd](https://github.com/penrose/penrose/commit/b3190ddb422d4c19aeae1d8a78af59186378cf78))
-* Add callout shapes ([#556](https://github.com/penrose/penrose/issues/556)) ([6e3d5a2](https://github.com/penrose/penrose/commit/6e3d5a24eeba981ed857c936c81425da7a2bbc76))
-* existential graph domain ([#600](https://github.com/penrose/penrose/issues/600)) ([115111d](https://github.com/penrose/penrose/commit/115111d2f6e8f3b9004c1669c3236f18c69c16ab))
-* rename statement mutation added to synthesizer ([#578](https://github.com/penrose/penrose/issues/578)) ([dbf7106](https://github.com/penrose/penrose/commit/dbf710646bcaad9f0e3142388ae4759ca6b3a740))
-* Style-Controlled Canvas Dimensions ([#589](https://github.com/penrose/penrose/issues/589)) ([9bf6901](https://github.com/penrose/penrose/commit/9bf6901c3e246bd00f2cab470aa17088595fbf77))
-* type-change implemented for synthesizer ([#585](https://github.com/penrose/penrose/issues/585)) ([81ea4cd](https://github.com/penrose/penrose/commit/81ea4cd0237ee2b811e46cc14352abd8c29b353a))
-
-
-
-
-
 # [1.2.0](https://github.com/penrose/penrose/compare/v1.1.0...v1.2.0) (2021-05-24)
 
 ### Bug Fixes

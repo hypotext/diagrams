@@ -1,13 +1,13 @@
 {
   "name": "@penrose/browser-ui",
-  "version": "1.3.0",
+  "version": "1.2.0",
   "main": "build/dist/module.js",
   "module": "build/dist/module.js",
   "types": "build/dist/types.js",
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.7.7",
-    "@penrose/core": "^1.3.0",
+    "@penrose/core": "^1.2.0",
     "@reach/tabs": "^0.9.0",
     "consola": "^2.15.0",
     "console-feed": "^2.8.11",

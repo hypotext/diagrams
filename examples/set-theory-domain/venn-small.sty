@@ -1,8 +1,3 @@
-canvas {
-  width = 800
-  height = 700
-}
-
 forall Set x {
     x.icon = Circle {
         -- center : (?, ?)
@@ -42,7 +37,7 @@ forall Set x {
     encourage sameCenter(x.text, x.icon)
 
     ensure minSize(x.icon)
-    ensure maxSize(x.icon, canvas.height / 3.)
+    ensure maxSize(x.icon)
 
     layer x.text above x.icon
 }

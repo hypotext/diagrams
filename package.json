@@ -43,5 +43,8 @@
       "**/@types/jest"
     ]
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "dependencies": {
+    "colormap": "^2.3.2"
+  }
 }

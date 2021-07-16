@@ -37,17 +37,7 @@ Create a "mod file" for your shape and place it in `mod/shapedefs/`. This must b
   - If the input type is `select`, there must be a subentry entitled `options`, which is an array of all possible options for the dropdown menu. This is **required**.
   - Any other [HTML input customization features](https://www.w3schools.com/html/html_form_input_types.asp). For example, the `range` input type takes in a `min` and `max` value respectively. You may provide your own values for these. If you do not choose to, such fields will take their HTML-defined default value. For instance, the `min` and `max` fields for `range` have default values of `0` and `100` respectively.
 - You only need to list the properties which you intend to be customizable. For instance, if you want the `strokeStyle` property to be immutable, do not include it in the mod file.
-- For properties that correspond to screen coordinates, such as `x` and `y` in most shapes, you can choose
-  choose to express minimum and maximum values for `range` and `number` inputs in terms of the
-  canvas. The available canvas parameters are
-  - `CANVAS_MIN_X` := `-canvas.width/2`
-  - `CANVAS_MAX_X` := `canvas.width/2`
-  - `CANVAS_MIN_Y` := `-canvas.height/2`
-  - `CANVAS_MAX_Y` := `canvas.height/2`
-  - `CANVAS_MIN_DIM` := `min(canvas.width, canvas.height)`
-  - `CANVAS_HALF_MIN_DIM` := `min(canvas.width, canvas.height)/2`
-  - `CANVAS_WIDTH` := `canvas.width`
-  - `CANVAS_HEIGHT` := `canvas.height`
+- For properties that correspond to screen coordinates, such as `x` and `y` in most shapes, you can choose to express minimum and maximum values for `range` and `number` inputs in terms of the canvas. For instance, if you would like the range of possible x-coordinates to be the canvas width, set the `min` and `max` value of your `x` property to `CANVASL` AND `CANVASR`, respectively (canvas left and right). `CANVAST` and `CANVASB` refer to the top and bottom of the canvas. See `mod/shapedefs/Circle.json` for examples of this. However, this shortcut is currently not recommended. The SVG canvas currently is hardcoded to have dimensions 800 x 700, no matter your browser dimensions, and the canvas shortcuts implement those fixed dimensions. Until the canvas size is dependent on browser size, we recommend you hardcode `min` and `max`.
 
 See the existing JSON files in `mod/shapedefs/` for examples.
 
@@ -65,3 +55,4 @@ After creating the mod file, add it to `mod/defmap.tsx`.
 
 - The `pathData` attribute is only modifiable if it contains a list of `IPt`. Currently does not work with Bezier curves.
 - If the types in `types.d.ts` change form, `LabeledInput.tsx` will likely need to be modified. For example, if the structure of `IPathData` is changed, attempting to modify the `pathData` attribute will result in a crash.
+- Uses the fact that the canvas is hardcoded. Needs to be updated when that changes.

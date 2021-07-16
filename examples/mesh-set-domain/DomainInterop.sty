@@ -3,11 +3,6 @@
 
 -- | Set Style program
 
-canvas {
-  width = 800
-  height = 700
-}
-
 const {
       subsetColor = sampleColor(0.2, "rgb")
       repelWeight = 0.0
@@ -26,7 +21,7 @@ Set x {
     ensure contains(x.icon, x.text)
     ensure contains(x.icon, x.text)
     ensure minSize(x.icon)
-    ensure maxSize(x.icon, canvas.height / 3.)
+    ensure maxSize(x.icon)
     -- encourage sameCenter(x.text, x.icon)
     x.icon below x.text
 }

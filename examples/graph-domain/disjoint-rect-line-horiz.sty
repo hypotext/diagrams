@@ -1,8 +1,4 @@
 -- Get all lines and boxes to be disjoint from each other. (AABB - horizontal axis-aligned bounding boxes)
-canvas {
-  width = 800
-  height = 700
-}
 
 Colors {
     Colors.black = rgba(0.0, 0.0, 0.0, 1.0)
@@ -99,5 +95,5 @@ Vertex v1; Vertex v2 {
 }
 
 Vertex v; Edge e {
-       ensure disjointRectLineAA(v.shape, e.shape)
+       ensure disjointRectLineAAHoriz(v.shape, e.shape)
 }

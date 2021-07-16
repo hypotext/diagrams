@@ -1,12 +1,11 @@
 import * as React from "react";
 import LabeledInput from "./LabeledInput";
-import { Canvas, ShapeTypes } from "@penrose/core";
+import { ShapeTypes } from "@penrose/core";
 
 interface IProps {
   shape: ShapeTypes.Shape;
   sAttrs: IShapeDef;
   modAttr(attrname: string, attrval: ShapeTypes.Value<any>): void;
-  canvas: Canvas;
 }
 
 interface IShapeDef {
@@ -17,7 +16,7 @@ interface IShapeDef {
 // Q - should this update shape properties in state? not really necessary functionally but maybe ideologically
 class AttrPicker extends React.Component<IProps> {
   public render() {
-    const { sAttrs, shape, modAttr, canvas } = this.props;
+    const { sAttrs, shape, modAttr } = this.props;
     if (!sAttrs.hasOwnProperty("properties")) {
       throw new Error("JSON missing the 'properties' attribute.");
     }
@@ -33,7 +32,6 @@ class AttrPicker extends React.Component<IProps> {
             inputProps={sAttrs.properties[ppty]}
             eAttr={ppty}
             eValue={shape.properties[ppty]}
-            canvas={canvas}
           />
         ))}
       </div>

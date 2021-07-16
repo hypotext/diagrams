@@ -339,30 +339,6 @@ export const showError = (
       )}' in translation.`;
     }
 
-    case "CanvasNonexistentError": {
-      return `Canvas properties are not defined.\nTry adding:
-canvas {
-    width = <my desired width>
-    height = <my desired height>
-}`;
-    }
-
-    case "CanvasNonexistentDimsError": {
-      switch (error.kind) {
-        case "missing":
-          return `Canvas ${error.attr} is not defined.\nTry adding:
-canvas {
-    ${error.attr} = <my desired ${error.attr}>
-}`;
-        case "GPI":
-          return `Canvas ${error.attr} must be a numeric literal, but it is a shape.`;
-        case "uninitialized":
-          return `Canvas ${error.attr} must be a numeric literal, but it is an expression or uninitialized.`;
-        case "wrong type":
-          return `Canvas ${error.attr} must be a numeric literal, but it has type ${error.type}.`;
-      }
-    }
-
     // ----- END TRANSLATION VALIDATION ERRORS
 
     // TODO(errors): use identifiers here

@@ -24,9 +24,9 @@ import { Fn, LabelCache, State } from "types/state";
 import { SubstanceEnv } from "types/substance";
 import { collectLabels } from "utils/CollectLabels";
 import { andThen, Result, showError } from "utils/Error";
-import { prettyPrintFn } from "utils/OtherUtils";
-import { bBoxDims, toHex, ops } from "utils/Util";
-import { Canvas } from "renderer/ShapeDef";
+import { prettyPrintFn, prettyPrintPath } from "utils/OtherUtils";
+import { bBoxDims, toHex } from "utils/Util";
+import { colorUninitShapes, colorUninitText } from "renderer/Color";
 
 const log = consola.create({ level: LogLevel.Warn }).withScope("Top Level");
 
@@ -57,12 +57,12 @@ export const stepUntilConvergence = (state: State, numSteps = 10000): State => {
   while (!stateConverged(currentState)) {
     currentState = step(currentState, numSteps, true);
   }
+  currentState = colorUninitText(colorUninitShapes(currentState));
   return currentState;
 };
 
 /**
  * Embed a static Penrose diagram in a DOM node.
- *
  * @param domainProg a Domain program string
  * @param subProg a Substance program string
  * @param styProg a Style program string
@@ -233,20 +233,13 @@ export const evalEnergy = (s: State): number => {
   return objective(weight)(s.varyingValues);
 };
 
-export type FnEvaled = IFnEvaled;
-
-export interface IFnEvaled {
-  f: number;
-  gradf: number[];
-}
-
 /**
  * Evaluate a list of constraints/objectives: this will be useful if a user want to apply a subset of constrs/objs on a `State`. If the `State` doesn't have the constraints/objectives compiled, it will generate them first. Otherwise, it will evaluate the cached functions.
  * @param fns a list of constraints/objectives
  * @param s a state with or without its opt functions cached
- * @returns a list of the energies and gradients of the requested functions, evaluated at the `varyingValues` in the `State`
+ * @returns a list of scalar values of the energies of the requested functions, evaluated at the `varyingValues` in the `State`
  */
-export const evalFns = (fns: Fn[], s: State): FnEvaled[] => {
+export const evalFns = (fns: Fn[], s: State): number[] => {
   const { objFnCache, constrFnCache } = s.params;
 
   // NOTE: if `prepareState` hasn't been called before, log a warning message and generate a fresh optimization problem
@@ -272,10 +265,7 @@ export const evalFns = (fns: Fn[], s: State): FnEvaled[] => {
       );
     }
     const cachedFnInfo = fnsCached[fnStr];
-    return {
-      f: cachedFnInfo.f(xs),
-      gradf: cachedFnInfo.gradf(xs),
-    };
+    return cachedFnInfo.f(xs); // Could also return gradient if desired
   });
 };
 
@@ -300,11 +290,9 @@ export {
   showError,
   Result,
   prettyPrintFn,
-  ops,
 };
 export type { PenroseError } from "./types/errors";
 export type { Registry, Trio };
 export type { Env };
 export type { SynthesizerSetting };
 export type { SubProg } from "types/substance";
-export type { Canvas };

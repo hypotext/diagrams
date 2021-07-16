@@ -1,7 +1,7 @@
 {
   "name": "@penrose/synthesizer",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.2.0",
   "description": "Synthesis engine for Penrose",
   "keywords": [
     "program synthesis",
@@ -28,15 +28,13 @@
     "set-example": "yarn start __tests__/setTheory.dsl --substance=__tests__/template.sub  --style=__tests__/venn.sty --path=../automator/progs --synth-setting=__tests__/set-settings.json --num-programs=30",
     "collinear-example": "yarn start __tests__/geometry.dsl --substance=__tests__/geo-template.sub  --style=__tests__/euclidean.sty --path=../automator/progs --synth-setting=__tests__/geo-settings.json --num-programs=30",
     "rect-example": "yarn start __tests__/geometry.dsl --substance=__tests__/rect.sub  --style=__tests__/euclidean.sty --path=../automator/progs --synth-setting=__tests__/rect-settings.json --num-programs=10",
-    "tri-example": "yarn start __tests__/geometry.dsl --substance=__tests__/tri-template.sub  --style=__tests__/euclidean.sty --path=../automator/progs --synth-setting=__tests__/tri-settings.json --num-programs=30",
-    "congruent-example": "yarn start __tests__/geometry.dsl --substance=__tests__/congruent.sub  --style=__tests__/euclidean.sty --path=../automator/progs --synth-setting=__tests__/congruent-settings.json --num-programs=30",
     "test": "echo \"no test specified for synthesizer\" && exit 0"
   },
   "bugs": {
     "url": "https://github.com/penrose/penrose/issues"
   },
   "dependencies": {
-    "@penrose/core": "^1.3.0",
+    "@penrose/core": "^1.2.0",
     "chalk": "^3.0.0",
     "global-jsdom": "^8.0.0",
     "neodoc": "^2.0.2",

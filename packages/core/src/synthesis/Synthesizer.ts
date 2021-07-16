@@ -5,13 +5,11 @@ import {
   applyFunction,
   applyPredicate,
   applyTypeDecl,
-  argMatches,
-  ArgStmtDecl,
   autoLabelStmt,
   domainToSubType,
-  matchSignatures,
   nullaryTypeCons,
   replaceStmt,
+  replaceStmtName,
   swapArgs,
 } from "analysis/SubstanceAnalysis";
 import { prettyStmt, prettySubstance } from "compiler/Substance";
@@ -19,9 +17,7 @@ import consola, { LogLevel } from "consola";
 import { dummyIdentifier } from "engine/EngineUtils";
 import { Map } from "immutable";
 import { cloneDeep, range, times, without } from "lodash";
-import { createChoice } from "pandemonium/choice";
-import { createRandom } from "pandemonium/random";
-import seedrandom from "seedrandom";
+import { choice, random } from "pandemonium";
 import { Identifier } from "types/ast";
 import {
   Arg,
@@ -47,8 +43,6 @@ import {
   SubStmt,
   TypeConsApp,
 } from "types/substance";
-
-type RandomFunction = (min: number, max: number) => number;
 
 const log = consola
   .create({ level: LogLevel.Info })
@@ -85,7 +79,7 @@ export interface SynthesizerSetting {
 //#region Synthesis context
 
 type Mutation = Add | Delete | Modify;
-type Modify = Swap | Replace | ReplaceName | TypeChange;
+type Modify = Swap | Replace | ReplaceName;
 
 interface Add {
   tag: "Add";
@@ -100,7 +94,6 @@ interface Replace {
   tag: "Replace";
   old: SubStmt;
   new: SubStmt;
-  mutationType: string;
 }
 
 interface Swap {
@@ -112,11 +105,6 @@ interface Swap {
 
 interface ReplaceName {
   tag: "ReplaceName";
-  stmt: SubStmt;
-}
-
-interface TypeChange {
-  tag: "TypeChange";
   stmt: SubStmt;
 }
 
@@ -216,26 +204,19 @@ class SynthesisContext {
   appendStmt = (stmt: SubStmt) => {
     this.prog = appendStmt(this.prog, stmt);
     this.numStmts++;
+    this.ops.push({ tag: "Add", stmt });
   };
 
-  replaceStmt = (
-    originalStmt: SubStmt,
-    newStmt: SubStmt,
-    mutationType: string
-  ): void => {
+  replaceStmt = (originalStmt: SubStmt, newStmt: SubStmt): void => {
     this.prog = replaceStmt(this.prog, originalStmt, newStmt);
-    this.ops.push({
-      tag: "Replace",
-      old: originalStmt,
-      new: newStmt,
-      mutationType,
-    });
+    this.ops.push({ tag: "Replace", old: originalStmt, new: newStmt });
   };
 
   removeStmt = (stmt: SubStmt) => {
     const index = this.prog.statements.indexOf(stmt);
     if (index > -1) {
       this.prog.statements.splice(index, 1);
+      this.ops.push({ tag: "Delete", stmt });
     } else {
       throw new Error(
         `Statement cannot be removed because it doesn't exist: ${prettyStmt(
@@ -252,9 +233,7 @@ class SynthesisContext {
 
   showOp = (op: Mutation) => {
     if (op.tag === "Replace") {
-      return `${op.tag} ${prettyStmt(op.old)} by ${prettyStmt(op.new)} via ${
-        op.mutationType
-      }`;
+      return `${op.tag} ${prettyStmt(op.old)} by ${prettyStmt(op.new)}`;
     } else {
       return `${op.tag} ${prettyStmt(op.stmt)}`;
     }
@@ -290,31 +269,17 @@ class SynthesisContext {
     }
   };
 
-  /**
-   * Remove a declared ID, NOTE: this should be called whenever we delete a Decl
-   * statement from list of statements to keep them in sync.
-   * @param typeStr either a Bind or Decl that is staged to be deleted
-   * @param id the identifier that is being removed
-   */
-  removeID = (typeStr: string, id: Identifier) => {
-    const ids = this.declaredIDs.get(typeStr);
-    if (ids) {
-      // keep all IDs that aren't id
-      const newIDs = ids.filter((otherID) => otherID.value !== id.value);
-      this.declaredIDs = this.declaredIDs.set(typeStr, newIDs);
-    } else {
-      log.warn(`Could not find any IDs for ${typeStr}`);
-    }
-  };
-
-  findIDs = (typeStr: string, excludeList?: Identifier[]): Identifier[] => {
+  pickID = (
+    typeStr: string,
+    excludeList?: Identifier[]
+  ): Identifier | undefined => {
     const possibleIDs = this.declaredIDs.get(typeStr);
     if (possibleIDs) {
       const candidates = possibleIDs.filter((id) =>
         excludeList ? !excludeList.includes(id) : true
       );
-      return candidates;
-    } else return [];
+      return choice([...candidates]);
+    } else return undefined;
   };
 
   generateID = (typeName: Identifier): Identifier => {
@@ -350,21 +315,11 @@ export class Synthesizer {
   env: Env;
   cxt: SynthesisContext;
   setting: SynthesizerSetting;
-  private choice: <T>(array: Array<T>) => T;
-  private random: RandomFunction;
 
-  constructor(
-    env: Env,
-    setting: SynthesizerSetting,
-    subRes?: SubRes,
-    seed = "synthesizerSeed"
-  ) {
+  constructor(env: Env, setting: SynthesizerSetting, subRes?: SubRes) {
     this.env = env;
     this.cxt = new SynthesisContext(subRes);
     this.setting = setting;
-    const rng = seedrandom(seed);
-    this.choice = createChoice(rng);
-    this.random = createRandom(rng);
   }
 
   /**
@@ -379,16 +334,9 @@ export class Synthesizer {
     });
 
   generateSubstance = (): SynthesizedSubstance => {
-    const numStmts = this.random(...this.setting.mutationCount);
+    const numStmts = random(...this.setting.mutationCount);
     this.cxt.reset(numStmts);
-    times(numStmts, (n) => {
-      this.mutateProgram();
-      log.debug(
-        `Mutation #${n} done. The program so far:\n${prettySubstance(
-          this.cxt.prog
-        )}`
-      );
-    });
+    times(numStmts, () => this.mutateProgram());
     // add autolabel statement
     this.cxt.autoLabel();
     // DEBUG: report results
@@ -403,82 +351,56 @@ export class Synthesizer {
 
   mutateProgram = (): void => {
     const ops = ["add", "delete", "edit"];
-    const op = this.choice(ops);
+    const op = choice(ops);
     if (op === "add") this.addStmt();
     else if (op === "delete") this.deleteStmt();
-    else if (op === "edit")
-      this.editStmt(this.choice(["Swap", "ReplaceName", "TypeChange"]));
+    else if (op === "edit") this.editStmt(choice(["Swap", "ReplaceName"]));
   };
 
   editStmt = (op: Modify["tag"]): void => {
     this.cxt.findCandidates(this.env, this.setting.edit);
-    const chosenType = this.choice(this.cxt.candidateTypes());
+    log.debug("Editing statement");
+    const chosenType = choice(this.cxt.candidateTypes());
     const candidates = [...this.cxt.getCandidates(chosenType).keys()];
-    const chosenName = this.choice(candidates);
+    const chosenName = choice(candidates);
     const stmt = this.findStmt(chosenType, chosenName);
     if (stmt && (stmt.tag === "ApplyPredicate" || stmt.tag === "Bind")) {
-      log.debug(`Editing statement: ${prettyStmt(stmt)}`);
       switch (op) {
         case "Swap": {
-          const s = (stmt.tag === "Bind" ? stmt.expr : stmt) as ApplyPredicate;
-          const indices = range(0, s.args.length);
-          const idx1 = this.choice(indices);
-          const idx2 = this.choice(without(indices, idx1));
-          const newStmt =
-            idx1 !== undefined && idx2 !== undefined
-              ? swapArgs(s, [idx1, idx2])
-              : s;
           if (stmt.tag === "ApplyPredicate") {
-            this.cxt.replaceStmt(stmt, newStmt as ApplyPredicate, op); // TODO: improve types to avoid casting
-          } else {
+            const indices = range(0, stmt.args.length);
+            const idx1 = choice(indices);
+            const idx2 = choice(without(indices, idx1));
             this.cxt.replaceStmt(
               stmt,
-              {
-                ...stmt,
-                expr: newStmt,
-              } as Bind,
-              op
+              swapArgs(stmt, [idx1, idx2]) as ApplyPredicate
             ); // TODO: improve types to avoid casting
+          } else {
+            const expr = stmt.expr as ApplyConstructor | ApplyFunction;
+            const indices = range(0, expr.args.length);
+            const idx1 = choice(indices);
+            const idx2 = choice(without(indices, idx1));
+            this.cxt.replaceStmt(stmt, {
+              ...stmt,
+              expr: swapArgs(stmt.expr as any, [idx1, idx2]),
+            } as Bind); // TODO: improve types to avoid casting
           }
-          break;
         }
         case "ReplaceName": {
-          const s = (stmt.tag === "Bind" ? stmt.expr : stmt) as ApplyPredicate;
-          const options = matchSignatures(s, this.env);
-          const pick = options.length > 0 ? this.choice(options) : s;
-          if (stmt.tag === "ApplyPredicate" && pick.name !== s.name) {
-            this.cxt.replaceStmt(
-              stmt,
-              {
+          if (stmt.tag === "ApplyPredicate") {
+            let newStmt = replaceStmtName(stmt, this.env);
+            if (newStmt.name !== stmt.name) {
+              this.cxt.replaceStmt(stmt, newStmt as ApplyPredicate);
+            }
+          } else if (stmt.tag === "Bind") {
+            let newStmt = replaceStmtName(stmt.expr as any, this.env);
+            if (newStmt.name !== (stmt.expr as ApplyConstructor).name) {
+              this.cxt.replaceStmt(stmt, {
                 ...stmt,
-                name: pick.name,
-              } as ApplyPredicate,
-              op
-            );
-          } else if (stmt.tag === "Bind" && pick.name !== s.name) {
-            if (pick.name !== s.name) {
-              this.cxt.replaceStmt(
-                stmt,
-                {
-                  ...stmt,
-                  expr: {
-                    ...stmt.expr,
-                    name: pick.name,
-                  },
-                } as Bind,
-                op
-              ); // TODO: improve types to avoid casting
+                expr: newStmt,
+              } as Bind); // TODO: improve types to avoid casting
             }
           }
-          break;
-        }
-        case "TypeChange": {
-          const options = argMatches(stmt, this.env);
-          if (options.length > 0) {
-            const pick = this.choice(options);
-            this.typeChange(stmt, pick);
-          }
-          break;
         }
       }
     } else {
@@ -488,121 +410,35 @@ export class Synthesizer {
     }
   };
 
-  typeChange = (oldStmt: ApplyPredicate | Bind, pick: ArgStmtDecl): void => {
-    let newStmt = oldStmt;
-    if (pick.tag === "PredicateDecl") {
-      newStmt = this.generatePredicate(pick);
-    } else if (pick.tag === "FunctionDecl") {
-      newStmt = this.generateFunction(pick);
-    } else {
-      newStmt = this.generateConstructor(pick);
-    }
-    // remove old statement
-    if (
-      newStmt.tag === "Bind" &&
-      oldStmt.tag === "Bind" &&
-      newStmt.variable.type !== oldStmt.variable.type
-    ) {
-      // old bind was replaced by a bind with diff type
-      this.cascadingDelete(oldStmt); // remove refs to the old bind
-      newStmt = newStmt as Bind;
-    } else {
-      // otherwise we can simple delete
-      this.cxt.removeStmt(oldStmt);
-    }
-    this.cxt.ops.push({
-      tag: "Replace",
-      old: oldStmt,
-      new: newStmt,
-      mutationType: "TypeChange",
-    });
-  };
-
   // NOTE: every synthesizer that 'addStmt' calls is expected to append its result to the AST, instead of just returning it. This is because certain lower-level functions are allowed to append new statements (e.g. 'generateArg'). Otherwise, we could write this module as a combinator.
   addStmt = (): void => {
     log.debug("Adding statement");
     this.cxt.findCandidates(this.env, this.setting.add);
-    const chosenType = this.choice(this.cxt.candidateTypes());
-    let stmt;
-    if (chosenType === "TypeDecl") {
-      stmt = this.generateType();
-    } else if (chosenType === "PredicateDecl") {
-      stmt = this.generatePredicate();
-    } else if (chosenType === "FunctionDecl") {
-      stmt = this.generateFunction();
-    } else if (chosenType === "ConstructorDecl") {
-      stmt = this.generateConstructor();
+    const chosenType = choice(this.cxt.candidateTypes());
+    switch (chosenType) {
+      case "TypeDecl":
+        this.generateType();
+        return;
+      case "PredicateDecl":
+        this.generatePredicate();
+        return;
+      case "FunctionDecl":
+        this.generateFunction();
+        return;
+      case "ConstructorDecl":
+        this.generateConstructor();
+        return;
     }
-    if (stmt) this.cxt.ops.push({ tag: "Add", stmt });
   };
 
   deleteStmt = (): void => {
     this.cxt.findCandidates(this.env, this.setting.delete);
     log.debug("Deleting statement");
-    const chosenType = this.choice(this.cxt.candidateTypes());
+    const chosenType = choice(this.cxt.candidateTypes());
     const candidates = [...this.cxt.getCandidates(chosenType).keys()];
-    const chosenName = this.choice(candidates);
+    const chosenName = choice(candidates);
     const stmt = this.findStmt(chosenType, chosenName);
-    if (stmt) {
-      if (stmt.tag === "Bind" || stmt.tag === "Decl") {
-        // if statement returns value, delete all refs to value
-        this.cascadingDelete(stmt).forEach((s) => {
-          this.cxt.ops.push({ tag: "Delete", stmt: s });
-        });
-      } else {
-        this.cxt.removeStmt(stmt);
-        this.cxt.ops.push({ tag: "Delete", stmt });
-      }
-    }
-  };
-
-  /**
-   * Given a statement which returns a value
-   * that is staged to be deleted, iteratively find and delete any other
-   * statements that would use the statement's returned variable
-   * TODO: Refactor to a pure function and put in SubstanceAnalysis.ts!
-   * @param dec either a Bind or Decl that is staged to be deleted
-   */
-  cascadingDelete = (dec: Bind | Decl): SubStmt[] => {
-    const findArg = (s: ApplyPredicate, ref: Identifier | undefined) =>
-      ref &&
-      s.args.filter((a) => {
-        return a.tag === ref.tag && a.value === ref.value;
-      }).length > 0;
-    const ids = [dec.tag === "Bind" ? dec.variable : dec.name]; // stack of variables to delete
-    const removedStmts: SubStmt[] = [];
-    log.debug("before cascading", this.cxt.prog.statements.length);
-    while (ids.length > 0) {
-      const id = ids.pop();
-      log.debug("looking for instances of:", id?.value);
-      // look for statements that take id as arg
-      const toDelete = this.cxt.prog.statements.filter((s) => {
-        if (s.tag === "Bind") {
-          const expr = (s.expr as unknown) as ApplyPredicate;
-          const willDelete = findArg(expr, id);
-          // push its return value IF bind will be deleted
-          if (willDelete) ids.push(s.variable);
-          // delete if arg is found in either return type or args
-          return willDelete || s.variable.value === id?.value;
-        } else if (s.tag === "ApplyPredicate") {
-          return findArg(s, id);
-        } else if (s.tag === "Decl") {
-          return s.name === id;
-        }
-      });
-      log.debug(`stmts with id: ${id?.value}, num stmts: ${toDelete.length}`);
-      // remove list of filtered statements
-      toDelete.forEach((stmt) => {
-        // remove Identifier from added IDs
-        if (stmt.tag === "Decl") {
-          this.cxt.removeID(stmt.type.name.value, stmt.name);
-        }
-        this.cxt.removeStmt(stmt);
-        removedStmts.push(stmt);
-      });
-    }
-    log.debug("final stmts", this.cxt.prog.statements.length);
-    return removedStmts;
+    if (stmt) this.cxt.removeStmt(stmt);
   };
 
   findStmt = (
@@ -614,14 +450,12 @@ export class Synthesizer {
       if (s.tag === "Bind") {
         const expr = s.expr;
         return expr.tag === subType && expr.name.value === name;
-      } else if (s.tag === "Decl") {
-        return s.tag === subType && s.type.name.value === name;
       } else {
         return s.tag === subType && s.name.value === name;
       }
     });
     if (stmts.length > 0) {
-      const stmt = this.choice(stmts);
+      const stmt = choice(stmts);
       return stmt;
     } else {
       log.debug(
@@ -636,7 +470,7 @@ export class Synthesizer {
     if (typeName) {
       typeCons = nullaryTypeCons(typeName);
     } else {
-      const type: TypeDecl = this.choice(
+      const type: TypeDecl = choice(
         this.cxt.candidates.types.toArray().map(([, b]) => b)
       );
 
@@ -653,24 +487,20 @@ export class Synthesizer {
     return stmt;
   };
 
-  generatePredicate = (pred?: PredicateDecl): ApplyPredicate => {
-    if (!pred) {
-      pred = this.choice(
-        this.cxt.candidates.predicates.toArray().map(([, b]) => b)
-      );
-    }
+  generatePredicate = (): ApplyPredicate => {
+    const pred: PredicateDecl = choice(
+      this.cxt.candidates.predicates.toArray().map(([, b]) => b)
+    );
     const args: SubPredArg[] = this.generatePredArgs(pred.args);
     const stmt: ApplyPredicate = applyPredicate(pred, args);
     this.cxt.appendStmt(stmt);
     return stmt;
   };
 
-  generateFunction = (func?: FunctionDecl): Bind => {
-    if (!func) {
-      func = this.choice(
-        this.cxt.candidates.functions.toArray().map(([, b]) => b)
-      );
-    }
+  generateFunction = (): Bind => {
+    const func: FunctionDecl = choice(
+      this.cxt.candidates.functions.toArray().map(([, b]) => b)
+    );
     const args: SubExpr[] = this.generateArgs(func.args);
     const rhs: ApplyFunction = applyFunction(func, args);
     const outputType = func.output.type as TypeConstructor;
@@ -681,12 +511,10 @@ export class Synthesizer {
     return stmt;
   };
 
-  generateConstructor = (cons?: ConstructorDecl): Bind => {
-    if (!cons) {
-      cons = this.choice(
-        this.cxt.candidates.constructors.toArray().map(([, b]) => b)
-      );
-    }
+  generateConstructor = (): Bind => {
+    const cons: ConstructorDecl = choice(
+      this.cxt.candidates.constructors.toArray().map(([, b]) => b)
+    );
     const args: SubExpr[] = this.generateArgs(cons.args);
     const rhs: ApplyConstructor = applyConstructor(cons, args);
     const outputType = cons.output.type as TypeConstructor;
@@ -715,11 +543,10 @@ export class Synthesizer {
       switch (option) {
         case "existing": {
           // TODO: clean up the logic
-          const possibleIDs =
+          const existingID =
             reuseOption === "distinct"
-              ? this.cxt.findIDs(argType.name.value, this.cxt.argCxt)
-              : this.cxt.findIDs(argType.name.value);
-          const existingID = this.choice(possibleIDs);
+              ? this.cxt.pickID(argType.name.value, this.cxt.argCxt)
+              : this.cxt.pickID(argType.name.value);
           if (!existingID) {
             return this.generateArg(arg, "generated", reuseOption);
           } else {
@@ -733,7 +560,7 @@ export class Synthesizer {
         case "mixed":
           return this.generateArg(
             arg,
-            this.choice(["existing", "generated"]),
+            choice(["existing", "generated"]),
             reuseOption
           );
       }

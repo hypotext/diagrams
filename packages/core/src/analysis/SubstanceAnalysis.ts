@@ -1,12 +1,14 @@
-import { pullAt } from "lodash";
+import { pullAt, map } from "lodash";
 import { Identifier } from "types/ast";
 import { Map } from "immutable";
+import { choice } from "pandemonium";
 import {
   ConstructorDecl,
   DomainStmt,
   Env,
   FunctionDecl,
   PredicateDecl,
+  TypeConstructor,
   TypeDecl,
 } from "types/domain";
 import {
@@ -61,27 +63,21 @@ export const swapArgs = (
 };
 
 /**
- * Find all declarations that take the same number and type of args as
- * original statement
+ * Replace a Substance statement with another substance statement with the same signature.
+ * NOTE: When no suitable replacement exists, returns original program without errors.
  * @param stmt a Substance statement
- * @param env Env of the program
  * @returns a new Substance statement
  */
-export const argMatches = (
-  stmt: ApplyConstructor | ApplyPredicate | ApplyFunction | Func | Bind,
+export const replaceStmtName = (
+  stmt: ApplyConstructor | ApplyPredicate | ApplyFunction | Func,
   env: Env
-): ArgStmtDecl[] => {
-  const options = (s: any) => {
-    const [st] = findDecl(s.name.value, env);
-    return st
-      ? [
-          matchDecls(st, env.constructors, signatureArgsEqual),
-          matchDecls(st, env.predicates, signatureArgsEqual),
-          matchDecls(st, env.functions, signatureArgsEqual),
-        ].flat()
-      : [];
+): ApplyConstructor | ApplyPredicate | ApplyFunction | Func => {
+  const options = matchingSignatures(stmt, env);
+  const pick = options.length > 0 ? choice(options) : stmt;
+  return {
+    ...stmt,
+    name: pick.name,
   };
-  return stmt.tag === "Bind" ? options(stmt.expr) : options(stmt);
 };
 
 /**
@@ -141,43 +137,24 @@ const swap = (arr: any[], a: number, b: number) =>
  *
  * @param stmtName string value of a statement, i.e. "isSubset"
  * @param opts all possible declaration options
- * @param matchFunc function that determines condition for a match
  * @returns Array of any statements that have the same signature as input statement
  */
-export const matchDecls = (
-  stmt: ArgStmtDecl,
-  opts: Map<string, ArgStmtDecl>,
-  matchFunc: (a: Signature, b: Signature) => boolean
-): ArgStmtDecl[] => {
-  //generate signature for the original statement
-  const origSignature = getSignature(stmt);
-  const decls: ArgStmtDecl[] = [...opts.values()];
-  return decls.filter((d) => {
-    // does not add original statement to list of matches
-    return stmt !== d && matchFunc(origSignature, getSignature(d));
-  });
-};
-
-/**
- * Find a given statement's declaration from Domain.
- * NOTE: match will be undefined if the statement could not
- * be found in list of predicates, functions, or constructors
- *
- * @param stmtName string value of a statement, i.e. "isSubset"
- * @param env Env for current program
- * @returns Array of length 2, with entries corresponding to: [matching decl, list where decl was found]
- */
-export const findDecl = (
+export const findMatches = (
   stmtName: string,
-  env: Env
-): [ArgStmtDecl | undefined, Map<string, ArgStmtDecl>] => {
-  let match: ArgStmtDecl | undefined;
-  match = env.predicates.get(stmtName);
-  if (match !== undefined) return [match, env.predicates];
-  match = env.functions.get(stmtName);
-  if (match !== undefined) return [match, env.functions];
-  match = env.constructors.get(stmtName);
-  return [match, env.constructors];
+  opts: Map<string, ArgStmtDecl>
+): ArgStmtDecl[] => {
+  // find signature of original statement in map
+  const orig = opts.get(stmtName);
+  if (orig) {
+    //generate signature for the original statement
+    const origSignature = getSignature(orig);
+    // does not add original statement to list of matches
+    const decls: ArgStmtDecl[] = [...opts.values()];
+    return decls.filter(
+      (d) => orig !== d && signatureEquals(origSignature, getSignature(d))
+    );
+  }
+  return [];
 };
 
 /**
@@ -185,18 +162,34 @@ export const findDecl = (
  *
  * @param stmt any supported Statement object (constructor, predicate, function)
  * @param env an Env object with domain/substance metadata
- * @param editType the type of edit mutation occurring
  * @returns an Array of all other statements that match the stmt signature
  */
-export const matchSignatures = (
+export const matchingSignatures = (
   stmt: ApplyConstructor | ApplyPredicate | ApplyFunction | Func,
   env: Env
-): ArgStmtDecl[] => {
-  const [st, opts] = findDecl(stmt.name.value, env);
-  if (st) {
-    return matchDecls(st, opts, signatureEquals);
+): any[] => {
+  let matches: any[] = [];
+  switch (stmt.tag) {
+    case "ApplyPredicate": {
+      return findMatches(stmt.name.value, env.predicates);
+    }
+    case "Func": {
+      // handling for Bind case: parser tags constructors & funcs with
+      // the "Func" tag before checker fixes types
+      let conMatches = findMatches(stmt.name.value, env.constructors);
+      if (conMatches.length > 0) return conMatches;
+      return findMatches(stmt.name.value, env.functions);
+    }
+    case "ApplyConstructor": {
+      return findMatches(stmt.name.value, env.constructors);
+    }
+    case "ApplyFunction": {
+      return findMatches(stmt.name.value, env.functions);
+    }
+    default: {
+      return matches;
+    }
   }
-  return [];
 };
 
 /**
@@ -206,7 +199,7 @@ export const matchSignatures = (
  * @returns a new Signature object
  */
 export const getSignature = (decl: ArgStmtDecl): Signature => {
-  const argTypes: string[] = [];
+  let argTypes: string[] = [];
   let outType: string | undefined;
   if (decl.args) {
     decl.args.forEach((a) => {
@@ -232,18 +225,8 @@ export const getSignature = (decl: ArgStmtDecl): Signature => {
  * @returns true if signatures are equal
  */
 export const signatureEquals = (a: Signature, b: Signature): boolean => {
-  return a.output === b.output && signatureArgsEqual(a, b);
-};
-
-/**
- * Check if the types of 2 signatures' arguments are equal
- *
- * @param a a Signature
- * @param b a Signature
- * @returns true if signatures take the same number and type of args
- */
-export const signatureArgsEqual = (a: Signature, b: Signature): boolean => {
   return (
+    a.output === b.output &&
     a.args.length === b.args.length &&
     a.args.every((val, index) => val === b.args[index])
   );
@@ -253,7 +236,7 @@ export const printStmts = (
   stmts: PredicateDecl[] | ConstructorDecl[] | FunctionDecl[]
 ): void => {
   let outStr = "";
-  const s = stmts as PredicateDecl[];
+  let s = stmts as PredicateDecl[];
   s.forEach((stmt) => {
     outStr += stmt.name.value + " ";
   });

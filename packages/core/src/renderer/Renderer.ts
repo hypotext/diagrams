@@ -1,4 +1,5 @@
 import shapeMap from "./shapeMap";
+import { canvasSize } from "renderer/ShapeDef";
 import { Shape } from "types/shape";
 import { dragUpdate } from "./dragUtils";
 import { IStrV } from "types/value";
@@ -16,11 +17,11 @@ export interface ShapeProps {
  * @param shape
  * @param labels
  */
-export const RenderShape = ({
-  shape,
-  labels,
-  canvasSize,
-}: ShapeProps): SVGElement => {
+export const RenderShape = (
+  shape: Shape,
+  labels: LabelCache,
+  canvasSizeCustom?: [number, number]
+): SVGElement => {
   if (!(shape.shapeType in shapeMap)) {
     console.error(`${shape.shapeType} shape doesn't exist in shapeMap`);
     return document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -29,7 +30,7 @@ export const RenderShape = ({
   return shapeMap[shape.shapeType]({
     shape,
     labels,
-    canvasSize,
+    canvasSize: canvasSizeCustom ?? canvasSize,
   });
 };
 
@@ -57,15 +58,13 @@ const getPosition = (e: MouseEvent, svg: SVGSVGElement) => {
  * @param canvasSizeCustom
  */
 export const DraggableShape = (
-  shapeProps: ShapeProps,
+  shape: Shape,
+  labels: LabelCache,
   onDrag: (id: string, dx: number, dy: number) => void,
   parentSVG: SVGSVGElement,
   canvasSizeCustom?: [number, number]
 ): SVGGElement => {
-  const elem = RenderShape({
-    ...shapeProps,
-    canvasSize: canvasSizeCustom ?? shapeProps.canvasSize,
-  });
+  const elem = RenderShape(shape, labels, canvasSizeCustom);
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("pointer-events", "bounding-box");
   g.appendChild(elem);
@@ -86,7 +85,7 @@ export const DraggableShape = (
       g.setAttribute("opacity", "1");
       document.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("mousemove", onMouseMove);
-      onDrag((shapeProps.shape.properties.name as IStrV).contents, dx, dy);
+      onDrag((shape.properties.name as IStrV).contents, dx, dy);
     };
     document.addEventListener("mouseup", onMouseUp);
     document.addEventListener("mousemove", onMouseMove);
@@ -103,22 +102,13 @@ export const RenderInteractive = (
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
   svg.setAttribute("version", "1.2");
-  svg.setAttribute(
-    "viewBox",
-    `0 0 ${state.canvas.width} ${state.canvas.height}`
-  );
+  svg.setAttribute("viewBox", `0 0 ${canvasSize[0]} ${canvasSize[1]}`);
   svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   const onDrag = (id: string, dx: number, dy: number) => {
     updateState(dragUpdate(state, id, dx, dy));
   };
   state.shapes.forEach((shape) =>
-    svg.appendChild(
-      DraggableShape(
-        { shape, labels: state.labelCache, canvasSize: state.canvas.size },
-        onDrag,
-        svg
-      )
-    )
+    svg.appendChild(DraggableShape(shape, state.labelCache, onDrag, svg))
   );
   return svg;
 };
@@ -128,20 +118,14 @@ export const RenderInteractive = (
  * @param shapes
  * @param labels
  */
-const RenderStatic = ({
-  shapes,
-  labelCache: labels,
-  canvas,
-}: State): SVGSVGElement => {
+const RenderStatic = ({ shapes, labelCache }: State): SVGSVGElement => {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
   svg.setAttribute("version", "1.2");
-  svg.setAttribute("viewBox", `0 0 ${canvas.width} ${canvas.height}`);
+  svg.setAttribute("viewBox", `0 0 ${canvasSize[0]} ${canvasSize[1]}`);
   svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  shapes.forEach((shape) =>
-    svg.appendChild(RenderShape({ shape, labels, canvasSize: canvas.size }))
-  );
+  shapes.forEach((shape) => svg.appendChild(RenderShape(shape, labelCache)));
   return svg;
 };
 

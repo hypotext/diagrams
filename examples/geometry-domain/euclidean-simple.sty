@@ -19,11 +19,6 @@
 
 */
 
-canvas {
-  width = 800
-  height = 700
-}
-
 Colors {
     -- Keenan palette
     black = rgba(0.0, 0.0, 0.0, 1.0)
@@ -150,8 +145,8 @@ with Point p; Point q {
      p.icon above e.icon
      q.icon above e.icon
 
-     encourage pointLineDist(p.text.center, e.icon, 30.)
-     encourage pointLineDist(q.text.center, e.icon, 30.)
+     encourage repel(e.icon, p.text, const.repelWeight)
+     encourage repel(e.icon, q.text, const.repelWeight)
 
      e.icon above const.plane
 }

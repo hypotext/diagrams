@@ -1,14 +1,19 @@
-import { IFloatV, IColorV, IStrV } from "types/value";
+import { IVectorV, IFloatV, IColorV, IStrV } from "types/value";
 import { toHex, toScreen } from "utils/Util";
-import { arrowHead, makeRoomForArrows } from "./Arrow";
+import { arrowHead } from "./Arrow";
 import { attrTitle, DASH_ARRAY } from "./AttrHelper";
 import { ShapeProps } from "./Renderer";
 
 const Line = ({ shape, canvasSize }: ShapeProps) => {
   const style = shape.properties.style.contents;
-  const [[arrowSX, arrowSY], [arrowEX, arrowEY]] = makeRoomForArrows(shape);
-  const [sx, sy] = toScreen([arrowSX, arrowSY], canvasSize);
-  const [ex, ey] = toScreen([arrowEX, arrowEY], canvasSize);
+  const [sx, sy] = toScreen(
+    (shape.properties.start as IVectorV<number>).contents as [number, number],
+    canvasSize
+  );
+  const [ex, ey] = toScreen(
+    (shape.properties.end as IVectorV<number>).contents as [number, number],
+    canvasSize
+  );
   const path = `M ${sx} ${sy} L ${ex} ${ey}`;
   const color = toHex(shape.properties.color.contents);
   const thickness = (shape.properties.thickness as IFloatV<number>).contents;

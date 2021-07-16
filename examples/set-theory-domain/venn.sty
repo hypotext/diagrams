@@ -1,22 +1,19 @@
-canvas {
-  width = 800
-  height = 700
-}
-
 forall Set x {
-    x.icon = Circle {
+   x.icon = Circle {
         strokeWidth : 0.0
-    }
+   }
 
-    x.text = Text {
+   x.text = Text {
         string : x.label
+        -- color: rgba(1, 1, 1, 1)
     }
 
     ensure contains(x.icon, x.text)
     ensure minSize(x.icon)
-    ensure maxSize(x.icon, canvas.height / 3.)
+    ensure maxSize(x.icon)
     encourage sameCenter(x.text, x.icon)
     x.textLayering = x.text above x.icon
+    
 }
 
 forall Set x; Set y

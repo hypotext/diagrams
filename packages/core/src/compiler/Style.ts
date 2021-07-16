@@ -25,7 +25,7 @@ import nearley from "nearley";
 import { lastLocation } from "parser/ParserUtil";
 import styleGrammar from "parser/StyleParser";
 import {
-  Canvas,
+  canvasXRange,
   findDef,
   PropType,
   Sampler,
@@ -2568,12 +2568,11 @@ const initFieldsAndAccessPaths = (
   tr: Translation
 ): Translation => {
   const varyingFieldsAndAccessPaths = varyingPaths.filter(isFieldOrAccessPath);
-  const canvas = getCanvas(tr);
 
   const initVals = varyingFieldsAndAccessPaths.map(
     (p: Path): TagExpr<VarAD> => {
       // by default, sample randomly in canvas X range
-      let initVal = randFloat(...canvas.xRange);
+      let initVal = randFloat(canvasXRange[0], canvasXRange[1]);
 
       // unless it's a VaryInit, in which case, don't sample, set to the init value
       // TODO: This could technically use `varyingInitPathsAndVals`?
@@ -2616,10 +2615,9 @@ const initFieldsAndAccessPaths = (
 const initProperty = (
   shapeType: ShapeTypeStr,
   properties: GPIProps<VarAD>,
-  [propName, [propType, propSampler]]: [string, [PropType, Sampler]],
-  canvas: Canvas
+  [propName, [propType, propSampler]]: [string, [PropType, Sampler]]
 ): GPIProps<VarAD> => {
-  const propVal: Value<number> = propSampler(canvas);
+  const propVal: Value<number> = propSampler();
   const propValAD: Value<VarAD> = valueNumberToAutodiffConst(propVal);
   const propValDone: TagExpr<VarAD> = { tag: "Done", contents: propValAD };
   const styleSetting: TagExpr<VarAD> = properties[propName];
@@ -2700,8 +2698,7 @@ const initShape = (
       (
         newGPI: GPIProps<VarAD>,
         propTemplate: [string, [PropType, Sampler]]
-      ): GPIProps<VarAD> =>
-        initProperty(stype, newGPI, propTemplate, getCanvas(tr)),
+      ): GPIProps<VarAD> => initProperty(stype, newGPI, propTemplate),
       clone(props)
     ); // NOTE: `initProperty` mutates its input, so the `props` from the translation is cloned here, so the one in the translation itself isn't mutated
 
@@ -2844,11 +2841,6 @@ const genState = (trans: Translation): Result<State, StyleErrors> => {
   const shapePathList: [string, string][] = findShapeNames(trans);
   const shapePaths = shapePathList.map(mkPath);
 
-  const canvasErrs = checkCanvas(trans);
-  if (canvasErrs.length > 0) {
-    return err(canvasErrs);
-  }
-
   // sample varying vals and instantiate all the non - float base properties of every GPI in the translation
   // this has to be done before `initFieldsAndAccessPaths` as AccessPaths may depend on shapes' properties already having been initialized
   const transInitShapes = initShapes(trans, shapePathList);
@@ -2915,7 +2907,8 @@ const genState = (trans: Translation): Result<State, StyleErrors> => {
     selectorMatches: undefined as any,
     varyingMap: {} as any, // TODO: Should this be empty?
 
-    canvas: getCanvas(trans),
+    // ordering invariant for assigning colors to uninit shapes & text in final state
+    shapeColorsInitialized: false,
   };
 
   return ok(initState);
@@ -3065,95 +3058,6 @@ const findPathsField = (
   throw Error("unknown tag");
 };
 
-// Check that canvas dimensions exist and have the proper type.
-const checkCanvas = (tr: Translation): StyleErrors => {
-  let errs: StyleErrors = [];
-
-  if (!("canvas" in tr.trMap)) {
-    errs.push({
-      tag: "CanvasNonexistentError",
-    });
-
-    return errs;
-  }
-
-  if (!("width" in tr.trMap.canvas)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "width",
-      kind: "missing",
-    });
-  } else if (!("contents" in tr.trMap.canvas.width.contents)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "width",
-      kind: "GPI",
-    });
-  } else if (!("contents" in tr.trMap.canvas.width.contents.contents)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "width",
-      kind: "uninitialized",
-    });
-  } else if (
-    typeof tr.trMap.canvas.width.contents.contents.contents !== "number"
-  ) {
-    const val = tr.trMap.canvas.width.contents.contents;
-    let type;
-    if (typeof val === "object" && "tag" in val) {
-      type = val.tag;
-    } else {
-      type = typeof val;
-    }
-
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "width",
-      kind: "wrong type",
-      type,
-    });
-  }
-
-  if (!("height" in tr.trMap.canvas)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "height",
-      kind: "missing",
-    });
-  } else if (!("contents" in tr.trMap.canvas.height.contents)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "height",
-      kind: "GPI",
-    });
-  } else if (!("contents" in tr.trMap.canvas.height.contents.contents)) {
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "height",
-      kind: "uninitialized",
-    });
-  } else if (
-    typeof tr.trMap.canvas.height.contents.contents.contents !== "number"
-  ) {
-    const val = tr.trMap.canvas.height.contents.contents;
-    let type;
-    if (typeof val === "object" && "tag" in val) {
-      type = val.tag;
-    } else {
-      type = typeof val;
-    }
-
-    errs.push({
-      tag: "CanvasNonexistentDimsError",
-      attr: "height",
-      kind: "wrong type",
-      type,
-    });
-  }
-
-  return errs;
-};
-
 // Check translation integrity
 const checkTranslation = (trans: Translation): StyleErrors => {
   // Look up all paths used anywhere in the translation's expressions and verify they exist in the translation
@@ -3165,21 +3069,6 @@ const checkTranslation = (trans: Translation): StyleErrors => {
 };
 
 //#endregion Checking translation
-
-/* Precondition: checkCanvas returns without error */
-export const getCanvas = (tr: Translation): Canvas => {
-  let width = ((tr.trMap.canvas.width.contents as TagExpr<VarAD>)
-    .contents as Value<VarAD>).contents as number;
-  let height = ((tr.trMap.canvas.height.contents as TagExpr<VarAD>)
-    .contents as Value<VarAD>).contents as number;
-  return {
-    width,
-    height,
-    size: [width, height],
-    xRange: [-width / 2, width / 2],
-    yRange: [-height / 2, height / 2],
-  };
-};
 
 export const compileStyle = (
   stySource: string,

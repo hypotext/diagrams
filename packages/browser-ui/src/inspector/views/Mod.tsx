@@ -76,7 +76,6 @@ class Mod extends React.Component<IViewProps, IState> {
               shape={frame.shapes[selectedShape]}
               sAttrs={def}
               modAttr={this.modAttr}
-              canvas={frame.canvas}
             />
           )}
         </div>

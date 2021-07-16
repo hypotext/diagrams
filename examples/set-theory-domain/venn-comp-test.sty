@@ -1,10 +1,5 @@
 -- Fork of venn-opt-test to verify doing optimization through an (external) computation
 
-canvas {
-  width = 800
-  height = 700
-}
-
 Colors {
    Colors.none = rgba(0.0, 0.0, 0.0, 0.0)
    Colors.black = rgba( 0.0, 0.0, 0.0, 1.0 )
@@ -37,7 +32,7 @@ forall Set x {
 
     ensure contains(x.icon, x.text)
     ensure minSize(x.icon)
-    ensure maxSize(x.icon, canvas.height / 3.)
+    ensure maxSize(x.icon)
     encourage sameCenter(x.text, x.icon)
     x.textLayering = x.text above x.icon
 }

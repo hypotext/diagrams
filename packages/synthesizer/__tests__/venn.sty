@@ -17,7 +17,7 @@ Set x {
 
     x.labelFn = ensure contains(x.shape, x.text)
     x.minSizeFn = ensure minSize(x.shape)
-    x.maxSizeFn = ensure maxSize(x.shape, canvas.height / 3.)
+    x.maxSizeFn = ensure maxSize(x.shape)
     x.layering  = x.shape below x.text
 }
 

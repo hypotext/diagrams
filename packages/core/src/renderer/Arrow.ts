@@ -1,4 +1,3 @@
-import { Shape } from "types/shape";
 import { IFloatV, IStrV, IColorV, IVectorV } from "types/value";
 import { arrowheads, round2, toHex, toScreen } from "utils/Util";
 import { attrFill, attrTitle, DASH_ARRAY } from "./AttrHelper";
@@ -32,55 +31,6 @@ export const arrowHead = (
   return marker;
 };
 
-export const makeRoomForArrows = (shape: Shape) => {
-  const [lineSX, lineSY] = (shape.properties.start as IVectorV<number>)
-    .contents as [number, number];
-  const [lineEX, lineEY] = (shape.properties.end as IVectorV<number>)
-    .contents as [number, number];
-
-  const arrowheadStyle = (shape.properties.arrowheadStyle as IStrV).contents;
-  const arrowheadSize = (shape.properties.arrowheadSize as IFloatV<number>)
-    .contents;
-  const thickness = (shape.properties.thickness as IFloatV<number>).contents;
-
-  // height * size = Penrose computed arrow size
-  // multiplied by thickness since the arrow size uses markerUnits, which is strokeWidth by default:
-  // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/markerUnits
-  const arrowHeight =
-    arrowheads[arrowheadStyle].height * arrowheadSize * thickness;
-  const length = Math.sqrt((lineSX - lineEX) ** 2 + (lineSY - lineEY) ** 2);
-
-  // Subtract off the arrowHeight from each side.
-  // See https://math.stackexchange.com/a/2045181 for a derivation.
-  let arrowSX, arrowSY;
-  if (shape.shapeType === "Line" && shape.properties.leftArrowhead.contents) {
-    [arrowSX, arrowSY] = [
-      lineSX - (arrowHeight / length) * (lineSX - lineEX),
-      lineSY - (arrowHeight / length) * (lineSY - lineEY),
-    ];
-  } else {
-    [arrowSX, arrowSY] = [lineSX, lineSY];
-  }
-
-  let arrowEX, arrowEY;
-  if (
-    shape.shapeType === "Arrow" ||
-    (shape.shapeType === "Line" && shape.properties.rightArrowhead.contents)
-  ) {
-    [arrowEX, arrowEY] = [
-      lineEX - (arrowHeight / length) * (lineEX - lineSX),
-      lineEY - (arrowHeight / length) * (lineEY - lineSY),
-    ];
-  } else {
-    [arrowEX, arrowEY] = [lineEX, lineEY];
-  }
-
-  return [
-    [arrowSX, arrowSY],
-    [arrowEX, arrowEY],
-  ];
-};
-
 const Arrow = ({ shape, canvasSize }: ShapeProps) => {
   const elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
   elem.setAttribute("pointer-events", "bounding-box");
@@ -93,11 +43,29 @@ const Arrow = ({ shape, canvasSize }: ShapeProps) => {
     .contents[3];
   elem.appendChild(arrowHead(id, color, alpha, arrowheadStyle, arrowheadSize));
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  const [[arrowSX, arrowSY], [arrowEX, arrowEY]] = makeRoomForArrows(shape);
-  const [sx, sy] = toScreen([arrowSX, arrowSY], canvasSize);
-  const [ex, ey] = toScreen([arrowEX, arrowEY], canvasSize);
+  const [sx, sy] = toScreen(
+    ((shape.properties.start as IVectorV<number>) as any).contents,
+    canvasSize
+  );
+  const [ex, ey] = toScreen(
+    ((shape.properties.end as IVectorV<number>) as any).contents,
+    canvasSize
+  );
 
-  path.setAttribute("d", `M ${sx} ${sy} L ${ex} ${ey}`);
+  const strokeWidth = (shape.properties.thickness as IFloatV<number>).contents;
+  // HACK: scale path down a bit to accommodate arrow length
+  const { width, refX } = arrowheads[arrowheadStyle];
+  const slope = Math.atan2(ey - sy, ex - sx);
+  const [offsetX, offsetY] = [
+    Math.cos(slope) * (width - refX) * strokeWidth * arrowheadSize,
+    Math.sin(slope) * (width - refX) * strokeWidth * arrowheadSize,
+  ];
+  path.setAttribute(
+    "d",
+    `M${sx} ${sy} L${
+      Math.abs(offsetX) < Math.abs(ex - sx) ? ex - offsetX : ex
+    } ${Math.abs(offsetY) < Math.abs(ey - sy) ? ey - offsetY : ey}`
+  );
   path.setAttribute("marker-end", `url(#${id})`);
   attrFill(shape, path);
   path.setAttribute("stroke", color);

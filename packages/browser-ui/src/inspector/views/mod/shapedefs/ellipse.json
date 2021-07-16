@@ -3,22 +3,22 @@
   "properties": {
     "center": {
       "inputType": "ptrange",
-      "minX": "CANVAS_MIN_X",
-      "maxX": "CANVAS_MAX_X",
-      "minY": "CANVAS_MIN_Y",
-      "maxY": "CANVAS_MAX_Y",
+      "minX": "CANVASL",
+      "maxX": "CANVASR",
+      "minY": "CANVASB",
+      "maxY": "CANVAST",
       "showValue": "true"
     },
     "rx": {
       "inputType": "range",
       "min": "0",
-      "max": "CANVAS_HALF_MIN_DIM",
+      "max": "350",
       "showValue": "true"
     },
     "ry": {
       "inputType": "range",
       "min": "0",
-      "max": "CANVAS_HALF_MIN_DIM",
+      "max": "350",
       "showValue": "true"
     },
     "color": {

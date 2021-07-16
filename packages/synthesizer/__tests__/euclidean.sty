@@ -1,8 +1,3 @@
-canvas {
-  width = 800
-  height = 700
-}
-
 Colors {
     -- Keenan palette
     black = rgba(0.0, 0.0, 0.0, 1.0)
@@ -52,12 +47,11 @@ const {
     rayLength = 100.0
     pointSize = 4.0
     pointStroke = 0.0
-    thetaRadius = 30.0
-    bigThetaRadius = 40.0
+    thetaRadius = 40.0
 }
 
 Plane p {
-  dim = 700.0
+  dim = 400.0
   p.text = Text {
     center : ((dim / 2.0) - const.textPadding2, (dim / 2.0) - const.textPadding2)
     string : p.label
@@ -67,8 +61,7 @@ Plane p {
   -- inner: #f3f4f9, outer: #8e93c4
   p.icon = Rectangle {
     -- angle : 0.0
-    --color : Colors.verylightpurple
-    color : Colors.none -- TODO: arrange angle markers so plane can be opaque
+    color : Colors.verylightpurple
     strokeColor : Colors.purple3
     strokeWidth : 2.0
     center : (0.0, 0.0)
@@ -99,6 +92,7 @@ Point p {
       color : Colors.black
       fontSize : const.fontSize
     }
+
     ensure atDist(p.icon, p.text, const.textPadding)
 }
 
@@ -117,9 +111,6 @@ where In(p, P) {
 Point p, q, r
 where Collinear(p, q, r) {
   ensure collinear(p.icon, q.icon, r.icon)
-  encourage repel(p.icon, q.icon, const.repelWeight)
-  encourage repel(q.icon, r.icon, const.repelWeight)
---  encourage equal(vdist(q.vec, p.vec), vdist(r.vec,q.vec))
 }
 
 Segment e
@@ -141,131 +132,10 @@ with Point p; Point q {
      p.icon above e.icon
      q.icon above e.icon
 
-     encourage pointLineDist(p.text.center, e.icon, 30.)
-     encourage pointLineDist(q.text.center, e.icon, 30.)
+     encourage repel(e.icon, p.text, const.repelWeight)
+     encourage repel(e.icon, q.text, const.repelWeight)
 
     --  e.icon above const.plane
-}
-
-Segment s, t
-where EqualLength(s, t) {
-  encourage equal(vdist(s.icon.start, s.icon.end), vdist(t.icon.start, t.icon.end))
-}
-
-Segment s, t 
-where EqualLengthMarker(s, t) {
-  s.tick = Line {
-    start : midpointOffset(s.icon, 10.)
-    end : midpointOffset(s.icon, -10.)
-    color : Colors.black
-    thickness : 2.0
-    stroke : "none"
-    style : "solid"
-  }
-  t.tick = Line {
-    start : midpointOffset(t.icon, 10.)
-    end : midpointOffset(t.icon, -10.)
-    color : Colors.black
-    thickness : 2.0
-    stroke : "none"
-    style : "solid"
-  }
-  s.tick above s.icon
-  t.tick above t.icon
-}
-
-Angle a, b
-where EqualAngleMarker1(a, b) {
-  --find points from p->q, then q->r for each vector. draw vectors for each
-  startA = ptOnLine(a.q, a.p, a.radius)
-  endA = ptOnLine(a.q, a.r, a.radius)
-  sweepA = arcSweepFlag(a.q, startA, endA)
-
-  startB = ptOnLine(b.q, b.p, b.radius)
-  endB = ptOnLine(b.q, b.r, b.radius)
-  sweepB = arcSweepFlag(b.q, startB, endB)
-
-  override a.mark = Path {
-    pathData : arc("open", startA, endA, (a.radius, a.radius), 0, 0, sweepA)
-   strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-  override b.mark = Path {
-    pathData : arc("open", startB, endB, (b.radius, b.radius), 0, 0, sweepB)
-    strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-}
-
-Angle a, b
-where EqualAngleMarker2(a, b) {
-  startA = ptOnLine(a.q, a.p, a.radius)
-  endA = ptOnLine(a.q, a.r, a.radius)
-  sweepA = arcSweepFlag(a.q, startA, endA)
-
-  startB = ptOnLine(b.q, b.p, b.radius)
-  endB = ptOnLine(b.q, b.r, b.radius)
-  sweepB = arcSweepFlag(b.q, startB, endB)
-
-  override a.mark = Path {
-    pathData : arc("open", startA, endA, (a.radius, a.radius), 0, 0, sweepA)
-   strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-  override b.mark = Path {
-    pathData : arc("open", startB, endB, (b.radius, b.radius), 0, 0, sweepB)
-    strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-
-  bigR = const.bigThetaRadius
-  startAbig = ptOnLine(a.q, a.p, bigR)
-  endAbig = ptOnLine(a.q, a.r, bigR)
-
-  startBbig = ptOnLine(b.q, b.p, bigR)
-  endBbig = ptOnLine(b.q, b.r, bigR)
-
-  override a.mark2 = Path {
-    pathData : arc("open", startAbig, endAbig, (bigR, bigR), 0, 0, sweepA)
-    strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-  override b.mark2 = Path {
-    pathData : arc("open", startBbig, endBbig, (bigR, bigR), 0, 0, sweepB)
-    strokeWidth : 2.0
-    color : Colors.black
-    fill: Colors.none
- }
-
-}
-Angle a, b
-where EqualAngle(a, b) {
-  -- make sure angle a is equal to angle b
-  dotA = dot(normalize(a.p - a.q), normalize(a.r - a.q))
-  dotB = dot(normalize(b.p - b.q), normalize(b.r - b.q))
-  ensure equal(dotA, dotB)
-}
-
-Angle a
-where RightUnmarked(a) {
-  ensure equal(dot(a.p - a.q, a.r - a.q), 0)
-}
-
-Angle a
-where RightMarked(a) {
-  --render half square path of size a.radius
-  override a.mark = Path {
-    pathData : pathFromPoints("open", [ptOnLine(a.q, a.p, 20.), innerPointOffset(a.q, a.p, a.r, 20.), ptOnLine(a.q, a.r, 20.)])
-    strokeWidth : 2.0
-    color : Colors.black
-    fill : Colors.none
-  }
-  ensure equal(dot(a.p - a.q, a.r - a.q), 0)
 }
 
 Segment e; Plane p {
@@ -279,6 +149,8 @@ with Point p; Point q; Point r {
   t.side2 above P.icon
   t.side3 above P.icon
 }
+
+
 
 Triangle t
 where t := MkTriangle(p, q, r)
@@ -334,50 +206,28 @@ with Point p; Point q; Point r; Point s; Plane P  {
   R.icon above P.icon
 }
 
-Angle theta
-where theta := InteriorAngle(p, q, r)
-with Point p; Point q; Point r {
-  theta.p = p.vec
-  theta.q = q.vec
-  theta.r = r.vec
-  theta.color = Colors.black
-  theta.side1 = Line {
-    start : p.icon.center
-    end : q.icon.center
-    color : theta.color
-    thickness : const.strokeWidth
-    stroke : 2.
-    style : "solid"
-  }
-  theta.side2 = Line {
-    start : q.icon.center
-    end : r.icon.center
-    color : theta.color
-    thickness : const.strokeWidth
-    stroke : 2.
-    style : "solid"
-  }
-  theta.radius = const.thetaRadius
-  encourage nonDegenerateAngle(p.icon, q.icon, r.icon)
-}
- --    theta.radius = const.thetaRadius
---     -- TODO: always take the acute angle, not the obtuse angle
---     theta.arcPath = arcPathEuclidean(p.vec, q.vec, r.vec, theta.radius, "Closed")
---
---     theta.shape = Path {
---       pathData : polygonFromPoints(theta.arcPath)
---      strokeWidth : const.strokeWidth
---       color : Colors.darkpurple
---       fill : setOpacity(Colors.white, 0.5)
---     }
+-- Angle theta
+-- where theta := InteriorAngle(q, p, r)
+-- with Point p; Point q; Point r {
 
---     theta.icon above const.plane
---     theta.icon below p.icon
---     theta.icon below q.icon
---     theta.icon below r.icon
+--      theta.radius = const.thetaRadius
+--      -- TODO: always take the acute angle, not the obtuse angle
+--      theta.arcPath = arcPathEuclidean(p.vec, q.vec, r.vec, theta.radius, "Closed")
 
---     -- TODO: or could be minimum constraint function
---     encourage repel(q.icon, r.icon, 100.0)
+--      theta.shape = Path {
+--        pathData : polygonFromPoints(theta.arcPath)
+--        strokeWidth : const.strokeWidth
+--        color : Colors.darkpurple
+--        fill : setOpacity(Colors.white, 0.5)
+--      }
+
+--      theta.icon above const.plane
+--      theta.icon below p.icon
+--      theta.icon below q.icon
+--      theta.icon below r.icon
+
+--      -- TODO: or could be minimum constraint function
+--      encourage repel(q.icon, r.icon, 100.0)
 -- }
 
 -- -- We don't know if the points in the triangle actually include the points in the square or not

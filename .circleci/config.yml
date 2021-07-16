@@ -1,5 +1,31 @@
 version: 2.1
 jobs:
+  docs-deploy:
+    docker:
+      - image: circleci/node:12.19.0
+    working_directory: ~/penrose/packages/core
+    steps:
+      - checkout:
+          path: ~/penrose
+      - run:
+          name: Install deps
+          command: |
+            sudo npm install -g --silent gh-pages
+            yarn
+            git config user.email "ci-build@penrose.ink"
+            git config user.name "ci-build"
+      - add_ssh_keys:
+          fingerprints:
+            - "e0:22:08:03:8f:eb:1c:b7:59:4e:48:00:6d:2d:a7:be"
+      - run:
+          name: Generate docs
+          command: yarn docs
+      - run:
+          name: Add nojekyll
+          command: touch docs/.nojekyll
+      - run:
+          name: Deploy to gh-pages
+          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist docs/
   build:
     docker:
       - image: circleci/node:12.19.0
@@ -91,6 +117,10 @@ workflows:
 
   build_main_deploy:
     jobs:
+      - docs-deploy:
+          filters:
+            branches:
+              only: main
       - build:
           filters:
             branches:

@@ -467,11 +467,11 @@ export const atan2 = (y: VarAD, x: VarAD, isCompNode = true): VarAD => {
   z.isCompNode = isCompNode;
 
   if (isCompNode) {
-    // https://stackoverflow.com/questions/52176354/sympy-can-i-safely-differentiate-atan2
-    // grad atan2(y, x) = [-y/(x**2 + y**2),  x/(x**2 + y**2)]
-    const denom = add(squared(x, false), squared(y, false), false);
-    const ynode = just(div(neg(y, false), denom, false));
-    const xnode = just(div(x, denom, false));
+      // https://stackoverflow.com/questions/52176354/sympy-can-i-safely-differentiate-atan2
+      // grad atan2(y, x) = [-y/(x**2 + y**2),  x/(x**2 + y**2)]
+      const denom = add(squared(x, false), squared(y, false), false);
+      const ynode = just(div(neg(y, false), denom, false));
+      const xnode = just(div(x, denom, false));
 
     y.parents.push({ node: z, sensitivityNode: ynode });
     x.parents.push({ node: z, sensitivityNode: xnode });
@@ -1064,35 +1064,31 @@ export const ops = {
     return ops.vadd(v, ops.vmul(c, u));
   },
 
-  /**
-   * Rotate a 2D point `[x, y]` by 90 degrees clockwise.
-   */
-  rot90: ([x, y]: VarAD[]): VarAD[] => {
-    return [neg(y), x];
-  },
+    /**
+     * Rotate a 2D point `[x, y]` by 90 degrees clockwise.
+     */
+    rot90: ([x, y]: VarAD[]): VarAD[] => {
+        return [neg(y), x];
+    },
 
-  /**
-   * Return 2D determinant/cross product of 2D vectors
-   */
-  cross2: (v: VarAD[], w: VarAD[]): VarAD => {
-    if (v.length !== 2 || w.length !== 2) {
-      throw Error("expected two 2-vectors");
-    }
-    return sub(mul(v[0], w[1]), mul(v[1], w[0]));
-  },
+    /**
+     * Return 2D determinant/cross product of 2D vectors
+     */
+    cross2: (v: VarAD[], w: VarAD[]): VarAD => {
+        if (v.length !== 2 || w.length !== 2) { throw Error("expected two 2-vectors"); }
+        return sub(mul(v[0], w[1]), mul(v[1], w[0]));
+    },
 
-  /**
-   * Return the angle between two 2D vectors `v` and `w` in radians.
-   * From https://github.com/thi-ng/umbrella/blob/develop/packages/vectors/src/angle-between.ts#L11
-   * NOTE: This function has not been thoroughly tested
-   */
-  angleBetween2: (v: VarAD[], w: VarAD[]): VarAD => {
-    if (v.length !== 2 || w.length !== 2) {
-      throw Error("expected two 2-vectors");
-    }
-    const t = atan2(ops.cross2(v, w), ops.vdot(v, w));
-    return t;
-  },
+    /**
+     * Return the angle between two 2D vectors `v` and `w` in radians.
+     * From https://github.com/thi-ng/umbrella/blob/develop/packages/vectors/src/angle-between.ts#L11
+     * NOTE: This function has not been thoroughly tested
+     */
+    angleBetween2: (v: VarAD[], w: VarAD[]): VarAD => {
+        if (v.length !== 2 || w.length !== 2) { throw Error("expected two 2-vectors"); }
+        const t = atan2(ops.cross2(v, w), ops.vdot(v, w));
+        return t;
+    },
 };
 
 export const fns = {

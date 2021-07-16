@@ -45,16 +45,6 @@
       "substance": "small-graph",
       "style": "disjoint-rect-line-horiz",
       "domain": "graph-theory"
-    },
-    {
-      "substance": "small-graph",
-      "style": "disjoint-rects-small-canvas",
-      "domain": "graph-theory"
-    },
-    {
-      "substance": "small-graph",
-      "style": "disjoint-rects-large-canvas",
-      "domain": "graph-theory"
     }
   ],
   "domains": {
@@ -120,16 +110,6 @@
       "domain": "graph-theory",
       "name": "Disjoint rectangles and lines in box",
       "URI": "graph-domain/disjoint-rect-line-horiz.sty"
-    },
-    "disjoint-rects-small-canvas": {
-      "domain": "graph-theory",
-      "name": "Disjoint rectangles in a small box",
-      "URI": "graph-domain/disjoint-rects-small-canvas.sty"
-    },
-    "disjoint-rects-large-canvas": {
-      "domain": "graph-theory",
-      "name": "Disjoint rectangles in a large box",
-      "URI": "graph-domain/disjoint-rects-large-canvas.sty"
     }
   },
   "substances": {

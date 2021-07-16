@@ -1,11 +1,8 @@
 import * as React from "react";
 import IViewProps from "./IViewProps";
-import { prettyPrintFn, evalFns, ops } from "@penrose/core";
-import { zipWith } from "lodash";
+import { prettyPrintFn, evalFns } from "@penrose/core";
+import { zip } from "lodash";
 import DataTable from "react-data-table-component";
-
-export const EPS = 10e-3;
-
 const Opt: React.FC<IViewProps> = ({ frame, history }: IViewProps) => {
   if (!frame) {
     return (
@@ -14,42 +11,38 @@ const Opt: React.FC<IViewProps> = ({ frame, history }: IViewProps) => {
       </div>
     );
   }
-  const constrInfos = zipWith(
+  const constrInfos = zip(
     frame.constrFns.map(prettyPrintFn),
-    evalFns(frame.constrFns, frame),
-    (name, fnEvaled) => {
-      const energy = Math.max(fnEvaled.f, 0);
-      return {
-        name,
-        energy,
-        sat: energy <= EPS ? "yes" : "no",
-      };
-    }
-  );
-  const objInfos = zipWith(
+    evalFns(frame.constrFns, frame)
+  ).map(([name, energy]) => ({
+    name,
+    energy,
+    type: "constraint",
+    sat: energy! <= 0 ? "yes" : "no",
+  }));
+  const objInfos = zip(
     frame.objFns.map(prettyPrintFn),
-    evalFns(frame.objFns, frame),
-    (name, fnEvaled) => {
-      const gradientNorm = ops.vnorm(fnEvaled.gradf);
-      return {
-        name,
-        gradientNorm,
-      };
-    }
-  );
+    evalFns(frame.objFns, frame)
+  ).map(([name, energy]) => ({
+    name,
+    energy,
+    type: "objective",
+    sat: energy! <= 0 ? "yes" : "no",
+  }));
 
   // TODO: hyperlink the shapes
   return (
     <div style={{ boxSizing: "border-box" }}>
       <DataTable
-        data={constrInfos}
-        title={"Constraints"}
+        data={[...constrInfos, ...objInfos]}
+        title={"Optimization"}
         dense={true}
         highlightOnHover={true}
         striped={true}
         columns={[
           { name: "Expression", selector: "name", sortable: true },
           { name: "Energy", selector: "energy", sortable: true },
+          { name: "Type", selector: "type", sortable: true },
           { name: "Satisfied?", selector: "sat", sortable: true },
         ]}
         conditionalRowStyles={[
@@ -59,17 +52,6 @@ const Opt: React.FC<IViewProps> = ({ frame, history }: IViewProps) => {
               backgroundColor: `#ffcabe !important`,
             },
           },
-        ]}
-      />
-      <DataTable
-        data={objInfos}
-        title={"Objectives"}
-        dense={true}
-        highlightOnHover={true}
-        striped={true}
-        columns={[
-          { name: "Expression", selector: "name", sortable: true },
-          { name: "Gradient Norm", selector: "gradientNorm", sortable: true },
         ]}
       />
     </div>
