@@ -1,0 +1,48 @@
+AutoLabel All
+
+InputNode IN1, IN2, INCARRY
+OutputNode SUM, CARRY
+
+Node XOR1IN1, XOR1IN2, XOR1OUT
+XORGate XOR1 := MakeXORGate(XOR1IN1, XOR1IN2, XOR1OUT)
+
+Node XOR2IN1, XOR2IN2, XOR2OUT
+XORGate XOR2 := MakeXORGate(XOR2IN1, XOR2IN2, XOR2OUT)
+
+Node XOR3IN1, XOR3IN2, XOR3OUT
+XORGate XOR3 := MakeXORGate(XOR3IN1, XOR3IN2, XOR3OUT)
+
+Node AND1IN1, AND1IN2, AND1OUT 
+ANDGate AND1 := MakeANDGate(AND1IN1, AND1IN2, AND1OUT)
+
+Node AND2IN1, AND2IN2, AND2OUT 
+ANDGate AND2 := MakeANDGate(AND2IN1, AND2IN2, AND2OUT)
+
+Node S1IN, S1OUT1, S1OUT2
+SplitComponent S1 := MakeSplitComponent(S1IN, S1OUT1, S1OUT2)
+
+Node S2IN, S2OUT1, S2OUT2
+SplitComponent S2 := MakeSplitComponent(S2IN, S2OUT1, S2OUT2)
+
+Node S3IN, S3OUT1, S3OUT2
+SplitComponent S3 := MakeSplitComponent(S3IN, S3OUT1, S3OUT2)
+
+Node S4IN, S4OUT1, S4OUT2
+SplitComponent S4 := MakeSplitComponent(S4IN, S4OUT1, S4OUT2)
+
+Connection C1 := MakeConnection(IN1, S1IN)
+Connection C2 := MakeConnection(IN2, S2IN)
+Connection C3 := MakeConnection(INCARRY, S3IN)
+Connection C4 := MakeConnection(S1OUT1, XOR1IN1)
+Connection C5 := MakeConnection(S1OUT2, AND1IN1)
+Connection C6 := MakeConnection(S2OUT1, XOR1IN2)
+Connection C7 := MakeConnection(S2OUT2, AND1IN2)
+Connection C8 := MakeConnection(S3OUT1, XOR2IN2)
+Connection C9 := MakeConnection(S3OUT2, AND2IN2)
+Connection C10 := MakeConnection(XOR1OUT, S4IN)
+Connection C11 := MakeConnection(S4OUT1, XOR2IN1)
+Connection C12 := MakeConnection(S4OUT2, AND2IN1)
+Connection C13 := MakeConnection(AND1OUT, XOR3IN2)
+Connection C14 := MakeConnection(AND2OUT, XOR3IN1)
+Connection C15 := MakeConnection(XOR2OUT, SUM)
+Connection C16 := MakeConnection(XOR3OUT, CARRY)

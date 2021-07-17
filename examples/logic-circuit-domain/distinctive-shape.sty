@@ -1,0 +1,224 @@
+-- Nodes
+
+forall Node x {
+    x.center = (?, ?)
+}
+
+forall InputNode x {
+    x.icon = Circle {
+        center: x.center
+        strokeWidth : 1.0
+        r : 6.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+
+    x.symbol = Text {
+       string : x.label
+       rotation : 0.0
+       center : (x.icon.center[0] - 30.0, x.icon.center[1])
+    }
+}
+
+forall OutputNode x {
+    x.icon = Circle {
+        center: x.center
+        strokeWidth : 1.0
+        r : 6.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    x.symbol = Text {
+       string : x.label
+       rotation : 0.0
+       center : (x.icon.center[0] + 35.0, x.icon.center[1])
+    }
+}
+
+forall InputNode A; InputNode B {
+    ensure equal(A.center[0], B.center[0])
+}
+
+forall OutputNode A; OutputNode B {
+    ensure equal(A.center[0], B.center[0])
+}
+
+-- Gates
+
+XORGate G
+where G := MakeXORGate(IN1, IN2, OUT)
+with Node IN1; Node IN2; Node OUT {
+    G.center = (?, ?)
+    G.width = 100.0
+    G.height = 60.0
+
+    G.part1 = Rectangle {
+        center : G.center
+        w : 40.0
+        h : 50.0
+        strokeWidth: 1.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part2 = Circle {
+        center : (G.part1.center[0] + 20.0, G.part1.center[1])
+        r : 25.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part3 = Circle {
+        center : (G.part1.center[0] + 20.0, G.part1.center[1])
+        r : 24.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(1.0, 1.0, 1.0, 1.0)
+    }
+
+    G.GG = 50.0
+    G.part4 = Circle {
+        center : (G.part1.center[0] - G.GG + 3.0, G.part1.center[1])
+        r : sqrt(25.0 * 25.0 + (G.GG - 20.0) * (G.GG  - 20.0))
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part5 = Rectangle {
+        center : (G.part1.center[0] - G.GG - 30.0+ 3.0, G.part1.center[1])
+        w : 2 * (G.GG - 20.0) + 60.0
+        h : 3 * (G.GG - 20.0)
+        strokeWidth: 0.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+    }
+    G.part5 above G.part4
+
+    G.part6 = Circle {
+        center : (G.part1.center[0] - G.GG  - 6.0, G.part1.center[1])
+        r : sqrt(25.0 * 25.0 + (G.GG - 20.0) * (G.GG  - 20.0))
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part7 = Rectangle {
+        center : (G.part1.center[0] - G.GG - 30.0 - 6.0, G.part1.center[1])
+        w : 2 * (G.GG - 20.0) + 60.0
+        h : 3 * (G.GG - 20.0)
+        strokeWidth: 0.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+    }
+    G.part4 above G.part3
+    G.part6 above G.part5
+    G.part7 above G.part6
+    
+    G.part1 above G.part2
+    G.part3 above G.part1
+    
+    ensure equal(vdist(IN1.center, (G.part1.center[0] - 20.0, G.part1.center[1] + 17.0)), 0.0)
+    ensure equal(vdist(IN2.center, (G.part1.center[0] - 20.0, G.part1.center[1] - 17.0)), 0.0)
+    ensure equal(vdist(OUT.center, (G.part1.center[0] + 45.0, G.part1.center[1])), 0.0)
+}
+
+ANDGate G
+where G := MakeANDGate(IN1, IN2, OUT)
+with Node IN1; Node IN2; Node OUT {
+    G.center = (?, ?)
+    G.width = 100.0
+    G.height = 60.0
+
+    G.part1 = Rectangle {
+        center : G.center
+        w : 40.0
+        h : 50.0
+        strokeWidth: 1.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part2 = Circle {
+        center : (G.part1.center[0] + 20.0, G.part1.center[1])
+        r : 25.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    G.part3 = Circle {
+        center : (G.part1.center[0] + 20.0, G.part1.center[1])
+        r : 24.0
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        strokeWidth : 1.0
+        strokeColor : rgba(1.0, 1.0, 1.0, 1.0)
+    }
+    G.part1 above G.part2
+    G.part3 above G.part1
+    
+    ensure equal(vdist(IN1.center, (G.part1.center[0] - 20.0, G.part1.center[1] + 17.0)), 0.0)
+    ensure equal(vdist(IN2.center, (G.part1.center[0] - 20.0, G.part1.center[1] - 17.0)), 0.0)
+    ensure equal(vdist(OUT.center, (G.part1.center[0] + 45.0, G.part1.center[1])), 0.0)
+}
+
+SplitComponent x
+where x := MakeSplitComponent(IN, OUT1, OUT2)
+with Node IN; Node OUT1; Node OUT2 {
+    x.center = IN.center
+    x.icon = Circle {
+        center: x.center
+        strokeWidth : 0.0
+        r : 6.0
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+    x.line = Line {
+        start : OUT1.center
+        end : OUT2.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 1.0
+    }
+    x.icon above x.line
+
+    ensure equal(IN.center[0], OUT1.center[0])
+    ensure equal(IN.center[0], OUT2.center[0])
+    ensure lessThan(0.0, -(OUT1.center[1] - IN.center[1]) * (-IN.center[1] + OUT2.center[1]))
+}
+
+forall Gate G; Gate H {
+    ensure lessThan(0.6 * (G.height + H.height), abs(G.part1.center[1] - H.part1.center[1]))
+    ensure lessThan(0.6 * (G.width + H.width), abs(G.part1.center[0] - H.part1.center[0]))
+}
+
+forall Connection x; XORGate y {
+    x.line1 above y.part7
+    x.line2 above y.part7
+    x.line3 above y.part7
+}
+
+-- Connections
+
+Connection C
+where C := MakeConnection(A, B)
+with Node A; Node B {
+    C.pivot = ?
+    C.line1 = Line {
+        start : A.center
+        end : (C.pivot, A.center[1])
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 1.0
+    }
+    C.line2 = Line {
+        start : (C.pivot, A.center[1])
+        end : (C.pivot, B.center[1])
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 1.0
+    }
+    C.line3 = Line {
+        start : (C.pivot, B.center[1])
+        end : B.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 1.0
+    }
+    encourage equal(A.center[1], B.center[1])
+    ensure lessThan(A.center[0], B.center[0])
+    ensure lessThan(A.center[0], C.pivot)
+    ensure lessThan(C.pivot, B.center[0])
+}
+
+forall SplitComponent x; SplitComponent y {
+    ensure lessThan(10.0, abs(x.center[0] - y.center[0]))
+}

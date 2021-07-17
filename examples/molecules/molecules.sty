@@ -1,0 +1,98 @@
+-- Atoms
+
+forall Carbon x {
+    x.icon = Circle {
+        strokeWidth : 0.0
+        r : 27.0
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+    }
+}
+
+forall Hydrogen x {
+    x.icon = Circle {
+        strokeWidth : 0.0
+        r : 18.0
+        color : rgba(0.6, 0.6, 0.6, 1.0)
+    }
+}
+
+forall Oxygen x {
+    x.icon = Circle {
+        strokeWidth : 0.0
+        r : 23.0
+        color : rgba(0.8, 0.0, 0.0, 1.0)
+    }
+}
+
+forall Nitrogen x {
+    x.icon = Circle {
+        strokeWidth : 0.0
+        r : 23.0
+        color : rgba(0.0, 0.0, 0.8, 1.0)
+    }
+}
+
+-- Bonds
+
+SingleBond b
+where b := MakeSingleBond(x, y)
+with Atom x; Atom y {
+    b.line = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 3.0
+    }
+    ensure equal(vdist(x.icon.center, y.icon.center), 60.0)
+}
+
+DoubleBond b
+where b := MakeDoubleBond(x, y)
+with Atom x; Atom y {
+    b.line1 = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 9.0
+    }
+    b.line2 = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        thickness: 3.0
+    }
+    b.layering = b.line2 above b.line1
+    ensure equal(vdist(x.icon.center, y.icon.center), 60.0)
+}
+
+TripleBond b
+where b := MakeTripleBond(x, y)
+with Atom x; Atom y {
+    b.line1 = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 15.0
+    }
+    b.line2 = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(1.0, 1.0, 1.0, 1.0)
+        thickness: 9.0
+    }
+    b.line3 = Line {
+        start : x.icon.center
+        end : y.icon.center
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        thickness: 3.0
+    }
+    b.layering1 = b.line2 above b.line1
+    b.layering2 = b.line3 above b.line2
+    ensure equal(vdist(x.icon.center, y.icon.center), 60.0)
+}
+
+-- Repulsion
+
+forall Atom x; Atom y {
+    encourage repel(x.icon, y.icon)
+}

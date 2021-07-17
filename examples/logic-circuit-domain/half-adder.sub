@@ -1,0 +1,25 @@
+AutoLabel All
+
+InputNode IN1, IN2
+OutputNode SUM, CAR
+
+Node XORIN1, XORIN2, XOROUT
+XORGate XOR := MakeXORGate(XORIN1, XORIN2, XOROUT)
+
+Node ANDIN1, ANDIN2, ANDOUT 
+ANDGate AND := MakeANDGate(ANDIN1, ANDIN2, ANDOUT)
+
+Node S1IN, S1OUT1, S1OUT2
+SplitComponent S1 := MakeSplitComponent(S1IN, S1OUT1, S1OUT2)
+
+Node S2IN, S2OUT1, S2OUT2
+SplitComponent S2 := MakeSplitComponent(S2IN, S2OUT1, S2OUT2)
+
+Connection C1 := MakeConnection(IN1, S1IN)
+Connection C2 := MakeConnection(IN2, S2IN)
+Connection C3 := MakeConnection(S1OUT1, XORIN1)
+Connection C4 := MakeConnection(S2OUT1, XORIN2)
+Connection C5 := MakeConnection(S1OUT2, ANDIN1)
+Connection C6 := MakeConnection(S2OUT2, ANDIN2)
+Connection C7 := MakeConnection(XOROUT, SUM)
+Connection C8 := MakeConnection(ANDOUT, CAR)

@@ -1,0 +1,43 @@
+-- Atoms
+
+Carbon C1, C2, C3, C4, C5, C6, C7, C8
+Hydrogen H1, H2, H3, H4, H5, H6, H7, H8, H9, H10
+Oxygen O1, O2
+Nitrogen N1, N2, N3, N4
+
+-- C-C Bonds
+
+DoubleBond C3C4 := MakeDoubleBond(C3, C4)
+SingleBond C4C5 := MakeSingleBond(C4, C5)
+
+-- C-H Bonds
+
+SingleBond C1H1 := MakeSingleBond(C1, H1)
+SingleBond C1H2 := MakeSingleBond(C1, H2)
+SingleBond C1H3 := MakeSingleBond(C1, H3)
+SingleBond C2H4 := MakeSingleBond(C2, H4)
+SingleBond C7H8 := MakeSingleBond(C7, H8)
+SingleBond C7H9 := MakeSingleBond(C7, H9)
+SingleBond C7H10 := MakeSingleBond(C7, H10)
+SingleBond C8H5 := MakeSingleBond(C8, H5)
+SingleBond C8H6 := MakeSingleBond(C8, H6)
+SingleBond C8H7 := MakeSingleBond(C8, H7)
+
+-- C-O Bonds
+
+DoubleBond C5O2 := MakeDoubleBond(C5, O2)
+DoubleBond C6O1 := MakeDoubleBond(C6, O1)
+
+-- C-N Bonds
+
+SingleBond C1N3 := MakeSingleBond(C1, N3)
+DoubleBond C2N2 := MakeDoubleBond(C2, N2)
+SingleBond C2N3 := MakeSingleBond(C2, N3)
+SingleBond C3N1 := MakeSingleBond(C3, N1)
+SingleBond C3N2 := MakeSingleBond(C3, N2)
+SingleBond C4N3 := MakeSingleBond(C4, N3)
+SingleBond C5N4 := MakeSingleBond(C5, N4)
+SingleBond C6N1 := MakeSingleBond(C6, N1)
+SingleBond C6N4 := MakeSingleBond(C6, N4)
+SingleBond C7N4 := MakeSingleBond(C7, N4)
+SingleBond C8N1 := MakeSingleBond(C8, N1)
