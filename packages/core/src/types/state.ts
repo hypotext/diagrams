@@ -125,6 +125,11 @@ export interface IParams {
 
   // `xsVars` are all the leaves of the energy graph
   energyGraph: VarAD; // This is the top of the energy graph (parent node)
+  energyGraphSer: any; // Serialized energy graph
+
+  historyUOenergy: number[];
+  historyAllEnergies: any[];
+
   constrWeightNode: VarAD; // Handle to node for constraint weight (so it can be set as the weight changes)
   epWeightNode: VarAD; // similar to constrWeightNode
 

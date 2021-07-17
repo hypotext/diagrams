@@ -94,10 +94,21 @@ const DEBUG_GRAD_DESCENT = false;
 const USE_LINE_SEARCH = true;
 const BREAK_EARLY = true;
 const DEBUG_LBFGS = false;
+const ONE_AT_A_TIME = false;
+const LOG_GRAPHS = false;
 
 const EPS = uoStop;
 
 ////////////////////////////////////////////////////////////////////////////////
+
+const serializeGraph = (g: VarAD): any => {
+  return {
+    val: g.val,
+    name: g.name,
+    op: g.op,
+    children: g.children.map((ch) => serializeGraph(ch.node)),
+  };
+};
 
 const unconstrainedConverged2 = (normGrad: number): boolean => {
   if (DEBUG_GRAD_DESCENT) {
@@ -188,6 +199,10 @@ export const step = (state: State, steps: number, evaluate = true) => {
   switch (optStatus) {
     case "NewIter": {
       log.trace("step newIter, xs", xs);
+      if (LOG_GRAPHS) {
+        state.params.historyUOenergy = [];
+        state.params.historyAllEnergies = [];
+      }
 
       // if (!state.params.functionsCompiled) {
       // TODO: Doesn't reuse compiled function for now (since caching function in App currently does not work)
@@ -236,6 +251,10 @@ export const step = (state: State, steps: number, evaluate = true) => {
       // NOTE: use cached varying values
       log.info("step step, xs", xs);
 
+      if (ONE_AT_A_TIME) {
+        state = genOptProblem(state, false);
+      }
+
       const res = minimize(
         xs,
         state.params.currObjective,
@@ -262,6 +281,32 @@ export const step = (state: State, steps: number, evaluate = true) => {
       optParams.lbfgsInfo = newLbfgsInfo;
       optParams.lastGradient = gradient;
       optParams.lastGradientPreconditioned = gradientPreconditioned;
+
+      // TODO: Delete this
+      if (LOG_GRAPHS) {
+        optParams.historyUOenergy = [...optParams.historyUOenergy, energyVal];
+        let xsVars = makeADInputVars(state.varyingValues);
+        const { objFns, constrFns, varyingPaths } = state;
+        const translationInit = makeTranslationDifferentiable(
+          clone(makeTranslationNumeric(state.translation))
+        );
+        const varyingMapList = _.zip(varyingPaths, xsVars) as [Path, VarAD][];
+        const translation = insertVaryings(translationInit, varyingMapList);
+        const varyingMap = genPathMap(varyingPaths, xsVars) as VaryMap<VarAD>;
+        const objEvaled = evalFns(objFns, translation, varyingMap);
+        const constrEvaled = evalFns(constrFns, translation, varyingMap);
+        const objEngs: VarAD[] = objEvaled.map((o) => applyFn(o, objDict));
+        const constrEngs: VarAD[] = constrEvaled.map((c) =>
+          fns.toPenalty(applyFn(c, constrDict))
+        );
+        optParams.historyAllEnergies = [
+          ...optParams.historyAllEnergies,
+          {
+            objEngs: objEngs.map((e) => e.val),
+            constrEngs: constrEngs.map((e) => e.val),
+          },
+        ];
+      }
 
       // NOTE: `varyingValues` is updated in `state` after each step by putting it into `newState` and passing it to `evalTranslation`, which returns another state
 
@@ -869,9 +914,31 @@ export const evalEnergyOnCustom = (state: State) => {
     // construct a new varying map
     const varyingMap = genPathMap(varyingPaths, xsVars) as VaryMap<VarAD>;
 
+    // Select a subset of objectives and cosntraints to optimize
+    let objIndexes: number[] = [...Array(objFns.length).keys()];
+    let constrIndexes: number[] = [...Array(constrFns.length).keys()];
+    if (ONE_AT_A_TIME) {
+      objIndexes = objIndexes.slice(
+        0,
+        objFns.length / 2 + state.params.UOround
+      );
+      constrIndexes = constrIndexes.slice(
+        0,
+        constrFns.length / 2 + state.params.UOround
+      );
+    }
+
     // NOTE: This will mutate the var inputs
-    const objEvaled = evalFns(objFns, translation, varyingMap);
-    const constrEvaled = evalFns(constrFns, translation, varyingMap);
+    const objEvaled = evalFns(
+      objIndexes.map((i) => objFns[i]),
+      translation,
+      varyingMap
+    );
+    const constrEvaled = evalFns(
+      constrIndexes.map((i) => constrFns[i]),
+      translation,
+      varyingMap
+    );
 
     const objEngs: VarAD[] = objEvaled.map((o) => applyFn(o, objDict));
     const constrEngs: VarAD[] = constrEvaled.map((c) =>
@@ -922,7 +989,7 @@ export const evalEnergyOnCustom = (state: State) => {
   };
 };
 
-export const genOptProblem = (state: State): State => {
+export const genOptProblem = (state: State, reset: boolean = true): State => {
   const xs: number[] = state.varyingValues;
   log.trace("step newIter, xs", xs);
 
@@ -957,36 +1024,64 @@ export const genOptProblem = (state: State): State => {
     { tag: "Just", contents: weightInfo }
   );
 
-  eig.GC.flush(); // Clear allocated matrix, vector objects in L-BFGS params
+  if (reset) {
+    eig.GC.flush(); // Clear allocated matrix, vector objects in L-BFGS params
+  }
 
-  const newParams: Params = {
-    ...state.params,
-    xsVars,
+  if (reset) {
+    const newParams: Params = {
+      ...state.params,
+      xsVars,
 
-    lastGradient: repeat(xs.length, 0),
-    lastGradientPreconditioned: repeat(xs.length, 0),
+      lastGradient: repeat(xs.length, 0),
+      lastGradientPreconditioned: repeat(xs.length, 0),
 
-    graphs,
-    objective: f,
-    gradient: gradf,
+      graphs,
+      objective: f,
+      gradient: gradf,
 
-    functionsCompiled: true,
+      functionsCompiled: true,
 
-    currObjective: f(initConstraintWeight),
-    currGradient: gradf(initConstraintWeight),
+      currObjective: f(initConstraintWeight),
+      currGradient: gradf(initConstraintWeight),
 
-    energyGraph: res.energyGraph,
-    constrWeightNode: res.constrWeightNode,
-    epWeightNode: res.epWeightNode,
-    weight: initConstraintWeight,
-    UOround: 0,
-    EPround: 0,
-    optStatus: "UnconstrainedRunning",
+      energyGraph: res.energyGraph,
+      energyGraphSer: serializeGraph(res.energyGraph),
+      constrWeightNode: res.constrWeightNode,
+      epWeightNode: res.epWeightNode,
+      weight: initConstraintWeight,
+      UOround: 0,
+      EPround: 0,
+      optStatus: "UnconstrainedRunning",
 
-    lbfgsInfo: defaultLbfgsParams,
-  };
+      lbfgsInfo: defaultLbfgsParams,
+    };
 
-  return { ...state, params: newParams };
+    return { ...state, params: newParams };
+  } else {
+    const newParams: Params = {
+      ...state.params,
+      xsVars,
+
+      graphs,
+      objective: f,
+      gradient: gradf,
+
+      functionsCompiled: true,
+
+      currObjective: f(initConstraintWeight),
+      currGradient: gradf(initConstraintWeight),
+
+      energyGraph: res.energyGraph,
+      energyGraphSer: serializeGraph(res.energyGraph),
+      constrWeightNode: res.constrWeightNode,
+      epWeightNode: res.epWeightNode,
+
+      optStatus: "UnconstrainedRunning",
+    };
+
+    return { ...state, params: newParams };
+  }
 };
 
 // Eval a single function on the state (using VarADs). Based off of `evalEnergyOfCustom` -- see that function for comments.
