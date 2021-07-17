@@ -2,7 +2,8 @@
 // TODO: unify type name convention (e.g. stop using `I` for interfaces and drop some of the Haskell ported types)
 
 import { VarAD } from "./ad";
-import { ASTNode, Identifier, IStringLit } from "./ast";
+import { ASTNode, Identifier, IntLit, IStringLit } from "./ast";
+import { IndexVar } from "./domain";
 
 /** Top level type for Style AST */
 export interface StyProg extends ASTNode {
@@ -72,8 +73,24 @@ export interface RelPred extends ASTNode {
 export type PredArg = SEBind | RelPred;
 
 // NOTE: the original type is unnecessarily nested and contain type constructor, which is deprecated.
-export type StyT = Identifier;
-// type StyT = ISTTypeVar | ISTCtor;
+export type StyT = Identifier | StyTIndexed;
+
+export interface StyTIndexed extends ASTNode {
+  tag: "StyTIndexed";
+  name: Identifier;
+  index: IndexVar;
+}
+
+export type IndexExpr = Identifier | IntLit;
+
+export interface RangeExpr extends ASTNode {
+  tag: "RangeExpr";
+  lower: IndexExpr;
+  upper: IndexExpr;
+  variable: IndexExpr;
+  lowerInclusive: boolean;
+  upperInclusive: boolean;
+}
 
 export interface ISTTypeVar {
   tag: "STTypeVar";
@@ -112,7 +129,11 @@ export interface ISAT {
   contents: StyT;
 }
 
-export type SelExpr = SEBind | SEFunc | SEValCons | SEFuncOrValCons;
+export type SelExpr = SEBind | SEFunc | SEValCons | SEFuncOrValCons | SEList;
+export interface SEList extends ASTNode {
+  tag: "SEList";
+  contents: SelExpr[];
+}
 
 export interface SEBind extends ASTNode {
   tag: "SEBind";
@@ -362,7 +383,9 @@ export interface PropertyDecl extends ASTNode {
 }
 
 // TODO: check how the evaluator/compiler should interact with ASTNode
+// COMBAK: LocalVar and SubObj are indistinguiable for the parser. The Style compiler will need to disambiguate among them, especially in the case of AccessPath
 export type Path =
+  | SubObj
   | IFieldPath
   | IPropertyPath
   | IAccessPath
@@ -372,6 +395,10 @@ export type Path =
 // Unused
 // | ITypePropertyPath;
 
+export interface SubObj extends ASTNode {
+  tag: "SubObj";
+  name: BindingForm;
+}
 export interface IFieldPath extends ASTNode {
   tag: "FieldPath";
   name: BindingForm;

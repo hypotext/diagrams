@@ -39,4 +39,8 @@ export interface IStringLit extends ASTNode {
   tag: "StringLit";
   contents: string;
 }
+export interface IntLit extends ASTNode {
+  tag: "IntLit";
+  contents: number;
+}
 //#endregion

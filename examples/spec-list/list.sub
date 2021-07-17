@@ -1,0 +1,29 @@
+-- Main program
+Vertex v1, v2, v3, v4
+Vertex^n neighbors := [v2, v3, v4]
+IsConnected(v1, neighbors)
+
+-- Misc parser tests (should work)
+Vertex v
+Vertex^n vs0
+vs0 := [v]
+
+Vertex^n vs1 := []
+
+-- Should not parse
+-- Vertex^n^m v
+
+-- Should not typecheck
+-- Case 1, list expr doesn't match declared type
+-- Edge e
+-- Vertex b
+-- Vertex^n bad0 := e
+-- Vertex^n bad1 := [e]
+-- Vertex^n bad2 := [e, b]
+
+-- Case 2, type signature mismatch between Substance and Domain
+-- Edge e1, e2
+-- Edge^n es := [e1, e2]
+-- IsConnected(v2, es)
+         
+AutoLabel All

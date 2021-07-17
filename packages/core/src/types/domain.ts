@@ -21,14 +21,21 @@ export interface Arg extends ASTNode {
 export interface NamedArg extends Arg {
   variable: Identifier;
 }
+export interface IndexVar extends ASTNode {
+  tag: "IndexVar";
+  name: Identifier;
+}
 export interface TypeVar extends ASTNode {
   tag: "TypeVar";
   name: Identifier;
 }
+
+// COMBAK: extend ASTNode?
 export interface TypeConstructor {
   tag: "TypeConstructor";
   name: Identifier;
   args: Type[];
+  index?: IndexVar;
 }
 export interface Prop extends ASTNode {
   tag: "Prop";

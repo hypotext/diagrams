@@ -77,8 +77,13 @@ export type SubExpr =
   | ApplyConstructor
   | Func // NOTE: there's no syntactic difference between function and consturctor, so the parser will parse both into this type first
   | Deconstructor
+  | ListLit
   | IStringLit;
 
+export interface ListLit extends ASTNode {
+  tag: "ListLit";
+  contents: SubExpr[];
+}
 export interface Func extends ASTNode {
   tag: "Func";
   name: Identifier;

@@ -1,0 +1,79 @@
+-- Main program
+
+Colors {
+	black = rgba(0., 0., 0., 1.)
+	blue = (0., 0., 1., 1.)
+}
+
+forall Vertex v {
+	v.shape = Circle { } -- Must be named `shape`
+}
+
+-- Generically matching on lists and styling them 
+forall Vertex v; Vertex^n ws
+where IsConnected(v, ws) { 
+	ws.shape = Rectangle { 
+                 center: v.center 
+        } -- The list gets a shape
+
+        ws.text = Text { 
+                center: ws.shape.center
+                string: ws.label 
+        }
+}
+
+-- relate v to each ws[i]; match each v => ws[i] once
+forall Vertex v; Vertex^n ws; Integer i where 0 <= i < n; IsConnected(v, ws) { 
+	-- creates an anonymous shape for each match -- i.e. cannot be referred to
+	shape = Line {
+		start: v.shape.center
+		end: ws[i].shape.center
+         	color: Colors.black
+	        right-arrowhead: true
+	}
+
+	-- When matching, `i` should take on its value, e.g. if you wanted a label
+	label = Text {
+		text: i.value -- This should be a special field
+	}
+}
+
+
+-- relate ws[i] to ws[i+1] ← note the range is changeable, 1 < i < n
+-- Stop at n-2 which then gets related to n-1
+forall Vertex v; Vertex^n ws; Integer i where 0 <= i < n-1; IsConnected(v, ws) {
+	-- creates an anon. arrow between adjacent vertices
+	-- I guess `v` isn’t technically needed?
+	shape = Line {
+		start: ws[i].shape.center
+		end: ws[i+1].shape.center
+		color: Colors.blue
+		right-arrowhead: true
+	}
+}
+
+-- Match multiple lists in the selector (compositionality)
+forall Vertex^n ws; Integer i;
+	Vertex^m zs; Integer j
+where 0 <= i < n; 0 <= j < m {
+	-- The semantics of this are to match each unique combination (i,j) (i.e. not (j,i)) AND make sure (ws != zs) (name-wise)
+	shape = Line {
+		start: ws[i].shape.center
+		end: zs[i].shape.center
+	}
+
+}
+
+-- Misc parser tests (should work)
+-- TODO
+
+-- Misc compiler tests
+
+-- TODO: we need to allow indexing to be expressions (and also evaluate exprs). When/how, e.g. literals only, or are paths allowed, etc.?
+-- QUESTION: How do the semantics of indexing relate to how indexing is currently implemented? How is it typechecked? Right now, it’s very ad-hoc
+
+-- Should not parse
+-- TODO
+
+-- Should not typecheck
+-- TODO
