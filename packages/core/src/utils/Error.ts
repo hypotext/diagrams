@@ -212,6 +212,11 @@ export const showError = (
       return showError(error.error); // Substance error
     }
 
+    case "SelectorAliasNamingError": {
+      return `Incompatible alias name "${error.alias.value}" in style selector: \
+      domain or style pattern statement has already declared the variable ${error.alias.value}`;
+    }
+
     // --- BEGIN BLOCK STATIC ERRORS
 
     case "InvalidGPITypeError": {

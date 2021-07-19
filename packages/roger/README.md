@@ -23,7 +23,7 @@ $ npm install -g @penrose/roger
 $ roger COMMAND
 running command...
 $ roger (-v|--version|version)
-@penrose/roger/1.0.0 darwin-x64 node-v12.19.0
+@penrose/roger/1.0.0 darwin-x64 node-v12.20.0
 $ roger --help [COMMAND]
 USAGE
   $ roger COMMAND

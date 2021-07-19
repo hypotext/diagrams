@@ -1,0 +1,62 @@
+canvas {
+  width = 800
+  height = 700
+}
+
+Set x {
+    x.shape = Circle {
+        strokeWidth : 0.
+    }
+
+    x.shading = Image {
+        center : x.shape.center 
+        w : x.shape.r * 2.0
+        h : x.shape.r * 2.0
+        path : "shading.svg"
+    }
+
+    x.shadow = Image {
+        path : "shadow.svg"
+        w : x.shape.r * 2.15
+        h : x.shape.r * 2.22
+        center : (x.shape.center[0] + 0.03 * x.shading.w, x.shape.center[1] - 0.051 * x.shading.h)
+    }
+
+    x.text = Text {
+        string : x.label
+        color: rgba(1.0, 1.0, 1.0, 1.0)
+        w: 0.5 * x.shape.r
+        h: 0.5 * x.shape.r
+    }
+
+    ensure contains(x.shape, x.text)
+    ensure minSize(x.shape)
+    ensure maxSize(x.shape, canvas.height / 3.)
+    encourage sameCenter(x.text, x.shape)
+
+    x.shape below x.text
+    x.shading below x.shape
+    x.shadow below x.shading
+}
+
+forall Set x; Set y
+where IsSubset(x, y) as foo {
+    ensure smallerThan(x.shape, y.shape)
+    ensure outsideOf(y.text, x.shape)
+    ensure contains(y.shape, x.shape, 5.0)
+    x.shape above y.shape
+    y.text below x.shape
+    x.shadow above y.shape
+}
+
+Set x; Set y
+where Not(Intersecting(x, y)) as bar {
+    ensure disjoint(x.shape, y.shape)
+}
+
+Set x; Set y
+where Intersecting(x, y) as baz {
+    ensure overlapping(x.shape, y.shape)
+    ensure outsideOf(y.text, x.shape)
+    ensure outsideOf(x.text, y.shape)
+}

@@ -1,0 +1,15 @@
+Set A, B, C, D, E, F, G
+Point H
+
+IsSubset(B, A)
+IsSubset(C, A)
+IsSubset(D, B)
+IsSubset(E, B)
+IsSubset(F, C)
+IsSubset(G, C)
+
+Not(Intersecting(E, D))
+Not(Intersecting(F, G))
+Not(Intersecting(B, C))
+
+AutoLabel All

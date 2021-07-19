@@ -1,0 +1,77 @@
+canvas {
+  width = 800
+  height = 700
+}
+
+forall Set x {
+    x.icon = Circle {
+        strokeWidth : 0.0
+    }
+
+    x.text = Text {
+        string : x.label
+    }
+
+    ensure contains(x.icon, x.text)
+    ensure minSize(x.icon)
+    ensure maxSize(x.icon, canvas.height / 3.)
+    encourage sameCenter(x.text, x.icon)
+    x.textLayering = x.text above x.icon
+}
+
+forall Set x; Set y
+where IsSubset(x, y) as foo {
+    foo.constraint1 = ensure smallerThan(x.icon, y.icon)
+    foo.constraint2 = ensure outsideOf(y.text, x.icon)
+    foo.constraint3 = ensure contains(y.icon, x.icon, 5.0)
+    x.icon above y.icon
+}
+
+-- TODO: Fix that the resample hack breaks on switching examples since it saves the cached functions...
+-- TOOD: Also breaks if you resample without generating the function on first sample. Clearly this should be part of the state
+
+---
+
+forall Set x; Set y
+where Not(Intersecting(x, y)) as bar {
+    bar.constraint1 = ensure disjoint(x.icon, y.icon)
+}
+
+-- --------- NEW
+
+
+forall Set x; Set y
+where Intersecting(x, y) as bee {
+    bee.constraint1 = ensure overlapping(x.icon, y.icon)
+    bee.constraint2 = ensure outsideOf(y.text, x.icon)
+    bee.constraint3 = ensure outsideOf(x.text, y.icon)
+}
+
+forall Point p {
+    p.offset = 20.0
+    p.icon = Circle {
+        strokeWidth : 0.0
+        color : rgba(0.0, 0.0, 0.0, 1.0)
+        r : 3.0
+    }
+
+    p.text = Text {
+        string : p.label
+        center : p.icon.center + (p.offset, p.offset)
+    }
+
+    p.textLayering = p.text above p.icon
+}
+
+Point p
+with Set A
+where PointIn(A, p) as baz {
+    baz.constraint1 = ensure contains(A.icon, p.icon, 0.3 * A.icon.r)
+    p.layering = p.icon above A.icon
+}
+
+Point p
+with Set A
+where Not(PointIn(A, p)) as fee {
+    fee.constraint1 = ensure disjoint(A.icon, p.icon)
+}

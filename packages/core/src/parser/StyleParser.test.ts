@@ -149,18 +149,41 @@ where IsSubset(   );
     const prog = `
 forall Set A, B; Map f
 with Set C, D; Map \`g\`
-where C := intersect ( A, B, Not(f) ) ; IsSubset( A, B ); IsSubset( Union(A,B), C); Intersect (   )
+where C := intersect ( A, B, Not(f) ); IsSubset( A, B ); IsSubset( Union(A,B), C); Intersect (   ) 
 as Const
 { }`;
     const { results } = parser.feed(prog);
     sameASTs(results);
+  });
+
+  test("multiple as clauses for predicates", () => {
+    const prog = `
+forall Set A, B, C, D
+where IsSubset(A, B) as foo; IsSubset(B,C) as bar; Union(C,D) as yeet;
+{ 
+  foo.arrow = Arrow{}
+  yeet.circle = Circle{}
+  bar.square = Square{}
+}`;
+    const { results } = parser.feed(prog);
+    sameASTs(results);
+  });
+  test("cannot as clauses for bindings", () => {
+    const prog = `
+    forall Set x; Set y where y := Baz(x) as foo {}
+    `;
+    expect(parseStyle(prog).isErr()).toEqual(true);
+  });
+  test("cannot set subVars as aliases", () => {
+    const prog = "Set x; Set y where IsSubset(x,y) as `A` {}";
+    expect(parseStyle(prog).isErr()).toEqual(true);
   });
 });
 
 describe("Block Grammar", () => {
   test("empty block with comments and blank lines", () => {
     const prog = `
-forall Set A, B; Map f as Const {
+forall Set A, B; Map f {
      
   -- comments
 
@@ -174,7 +197,7 @@ forall Set A, B; Map f as Const {
 
   test("single statement", () => {
     const prog = `
-forall Set A, B; Map f as Const {
+forall Set A, B; Map f {
   delete A.arrow.center
 }`;
     const { results } = parser.feed(prog);
@@ -183,7 +206,7 @@ forall Set A, B; Map f as Const {
 
   test("delete statements with field, property paths", () => {
     const prog = `
-forall Set A, B; Map f as Const {
+forall Set A, B; Map f {
   delete A.arrow.center
   delete B.arrow
   delete localx
@@ -194,7 +217,7 @@ forall Set A, B; Map f as Const {
 
   test("line comments among statements", () => {
     const prog = `
-forall Set A, B; Map f as Const {
+forall Set A, B; Map f {
   -- beginning comment
   delete A.arrow.center 
   -- between comment
@@ -208,7 +231,7 @@ forall Set A, B; Map f as Const {
 
   test("line comments after statements", () => {
     const prog = `
-forall Set A, B; Map f as Const {
+forall Set A, B; Map f {
   delete A.arrow.center -- end of statement comment
   -- between comment
   delete B.arrow

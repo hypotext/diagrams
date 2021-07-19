@@ -300,6 +300,113 @@ describe("Compiler", () => {
 
   // TODO: There are no tests directly for the substitution application part of the compiler, though I guess you could walk the AST (making the substitution-application code more generic to do so) and check that there are no Style variables anywhere? Except for, I guess, namespace names?
 
+  describe("Correct style programs with predicate aliasing", () => {
+    const domainProg = "type Set\npredicate IsSubset : Set s1 * Set s2";
+    const subProg = "Set A\nSet B\nSet C\nIsSubset(B,A)\nIsSubset(C,B)";
+    // TODO: Name these programs
+    const styProgs = [
+      // These are mostly to test setting shape properties as vectors or accesspaths
+      `Set x; Set y where IsSubset(x,y) as foo {}
+`,
+      `Set x; Set y where IsSubset(x,y) as foo {
+  foo.icon = Circle{}
+}`,
+      `Set a; Set b where IsSubset(a,b) as foo {
+  foo.icon = Square{}
+}
+
+Set u; Set v where IsSubset(u,v) as bar {
+  bar.icon2 = Ellipse{}
+}
+`,
+      `Set x; Set y where IsSubset(x,y) as foo {
+  foo.arrow = Arrow { thickness : 2.0 }
+}
+Set A; Set B where IsSubset(A,B) as bar {
+  override bar.arrow.thickness = 1.5
+}
+`,
+      `canvas {
+  override width = 500.0
+}`,
+    ];
+
+    const domainRes: Result<Env, PenroseError> = compileDomain(domainProg);
+
+    const subRes: Result<[SubstanceEnv, Env], PenroseError> = andThen(
+      (env) => compileSubstance(subProg, env),
+      domainRes
+    );
+
+    // specific tests
+    for (let i = 0; i < styProgs.length; i++) {
+      const styProg = styProgs[i];
+      const styRes: Result<State, PenroseError> = andThen(
+        (res) => S.compileStyle(canvasPreamble + styProg, ...res),
+        subRes
+      );
+
+      if (!styRes.isOk()) {
+        fail(
+          `Expected Style program to work without errors. Got error ${styRes.error.errorType}`
+        );
+      } else {
+        const initialState = styRes.value;
+        const existsInTr = (str: string) => {
+          return Object.keys(initialState.translation.trMap).includes(str);
+        };
+        const existsInNamedObj = (name: string, field: string) => {
+          return Object.keys(initialState.translation.trMap[name]).includes(
+            field
+          );
+        };
+        if (i === 1) {
+          expect(["IsSubset_B_A", "IsSubset_C_B"].every(existsInTr)).toBe(true);
+        } else if (i === 2) {
+          test("aliased keys exist", () => {
+            expect(["IsSubset_B_A", "IsSubset_C_B"].every(existsInTr)).toBe(
+              true
+            );
+          });
+          test("all fields exist", () => {
+            expect(
+              [
+                ["IsSubset_B_A", "icon"],
+                ["IsSubset_B_A", "icon2"],
+                ["IsSubset_C_B", "icon"],
+                ["IsSubset_C_B", "icon2"],
+              ].every(([name, field]) => existsInNamedObj(name, field))
+            ).toBe(true);
+          });
+        } else if (i === 3) {
+          test("aliased keys exist", () => {
+            expect(["IsSubset_B_A", "IsSubset_C_B"].every(existsInTr)).toBe(
+              true
+            );
+          });
+          test("arrow field exists", () => {
+            expect(
+              [
+                ["IsSubset_B_A", "arrow"],
+                ["IsSubset_C_B", "arrow"],
+              ].every(([name, field]) => existsInNamedObj(name, field))
+            ).toBe(true);
+          });
+          test("arrow thickness field is correct", () => {
+            expect(
+              ["IsSubset_B_A", "IsSubset_C_B"].every((name) => {
+                return (
+                  initialState.translation.trMap[name]["arrow"].contents[1]
+                    .thickness.contents.contents === 1.5
+                );
+              })
+            ).toBe(true);
+          });
+        }
+      }
+    }
+  });
+
   // Test errors
   const PRINT_ERRORS = false;
 
@@ -371,6 +478,15 @@ describe("Compiler", () => {
       TaggedSubstanceError: [
         `forall Set x; Point y
 where IsSubset(y, x) { }`,
+      ],
+
+      SelectorAliasNamingError: [
+        `forall Set x; Set y where IsSubset(x,y) as Set { }`,
+        `forall Set x; Set y where IsSubset(x,y) as IsSubset { }`,
+        `Set x; Set y where IsSubset(x,y) as Union {}`,
+        `Set x; Set y where IsSubset(x,y) as x {}`,
+        `Set x; Set y where IsSubset(x,y) as y {}`,
+        `Set A; Set B where IsSubset(A,B) as A {}`,
       ],
 
       // ---------- Block static errors

@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:12.20.0
     steps:
       - checkout:
           path: ~/penrose
@@ -54,7 +54,7 @@ jobs:
       #     destination: penrose-web-built
   canary_release:
     docker:
-      - image: circleci/node:12.19.0
+      - image: circleci/node:12.20.0
     steps:
       - checkout:
           path: ~/penrose

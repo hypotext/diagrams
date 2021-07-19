@@ -15,20 +15,25 @@ Set x; Set y {
 -- TODO: Phase this back in
 
 Set x; Set y
-where IsSubset(x, y) {
-    arrow = Arrow { 
+where IsSubset(x, y) as foo {
+    foo.arrow = Arrow { 
       thickness : 2.0
       color : rgba(0.0, 0.0, 0.0, 1.0)
     }
 
     -- Draw the arrow from y to x
-    encourage centerArrow(arrow, x.icon, y.icon)
+    encourage centerArrow(foo.arrow, x.icon, y.icon)
 
     -- Position y above x
     encourage above(y.icon, x.icon)
 
     -- Have sets 'fight' to be aligned with the superset's x-position
     encourage equal(x.icon.center[0], y.icon.center[0])
+}
+
+Set u; Set v
+where IsSubset(u,v) as bar {
+  override bar.arrow.color = rgba(0.5, 0.2, 0.1, 1.0)
 }
 
 /*
