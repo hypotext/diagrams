@@ -155,7 +155,7 @@ export interface IStrV {
 /** A point in 2D **/
 export interface IPtV<T> {
   tag: "PtV";
-  contents: [T, T];
+  contents: T[];
 }
 
 /** A path, similar to an [SVG path](https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths) **/
@@ -167,7 +167,7 @@ export interface IPathDataV<T> {
 /** A list of points **/
 export interface IPtListV<T> {
   tag: "PtListV";
-  contents: [T, T][];
+  contents: T[][];
 }
 
 /** A list of colors **/
@@ -215,7 +215,7 @@ export interface IMatrixV<T> {
 /** A 2-tuple **/
 export interface ITupV<T> {
   tag: "TupV";
-  contents: [T, T];
+  contents: T[];
 }
 
 /** A list of lists **/
@@ -237,7 +237,8 @@ export interface IHMatrixV<T> {
  */
 export interface IPolygonV<T> {
   tag: "PolygonV";
-  contents: [[T, T][][], [T, T][][], [[T, T], [T, T]], [T, T][]];
+  contents: [T[][][], T[][][], T[][], T[][]];
+  // contents: T[][][];
 }
 
 export type HMatrix<T> = IHMatrix<T>;
@@ -255,40 +256,70 @@ export type Color<T> = IRGBA<T> | IHSVA<T>;
 
 export interface IRGBA<T> {
   tag: "RGBA";
-  contents: [T, T, T, T];
+  contents: T[];
 }
 
 export interface IHSVA<T> {
   tag: "HSVA";
-  contents: [T, T, T, T];
+  contents: T[];
 }
+
+// export interface IPt<T> {
+//   tag: "Pt";
+//   contents: [T, T];
+// }
+
+// export interface ICubicBez<T> {
+//   tag: "CubicBez";
+//   contents: [[T, T], [T, T], [T, T]];
+// }
+
+// export interface ICubicBezJoin<T> {
+//   tag: "CubicBezJoin";
+//   contents: [[T, T], [T, T]];
+// }
+
+// export interface IQuadBez<T> {
+//   tag: "QuadBez";
+//   contents: [[T, T], [T, T]];
+// }
+
+// export interface IQuadBezJoin<T> {
+//   tag: "QuadBezJoin";
+//   contents: [T, T];
+// }
+
+// export interface IArc<T> {
+//   tag: "Arc";
+//   contents: [[T, T], [T, T, T], [T, T]];
+// }
 
 export interface IPt<T> {
   tag: "Pt";
-  contents: [T, T];
+  contents: T[];
 }
 
 export interface ICubicBez<T> {
   tag: "CubicBez";
-  contents: [[T, T], [T, T], [T, T]];
+  contents: T[][];
 }
 
 export interface ICubicBezJoin<T> {
   tag: "CubicBezJoin";
-  contents: [[T, T], [T, T]];
+  contents: T[][];
 }
 
 export interface IQuadBez<T> {
   tag: "QuadBez";
-  contents: [[T, T], [T, T]];
+  contents: T[][];
 }
 
 export interface IQuadBezJoin<T> {
   tag: "QuadBezJoin";
-  contents: [T, T];
+  contents: T[];
 }
 
 export interface IArc<T> {
   tag: "Arc";
-  contents: [[T, T], [T, T, T], [T, T]];
+  contents: T[][];
 }
