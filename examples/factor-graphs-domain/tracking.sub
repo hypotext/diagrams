@@ -1,0 +1,29 @@
+-- Tracking example (Fig 2a in Dellaert21ar)
+
+Variable x1,x2,x3
+
+Factor p1 := Unary(x1)
+
+Factor m1 := Unary(x1)
+Factor m2 := Unary(x2)
+Factor m3 := Unary(x3)
+
+Factor b12 := Binary(x1,x2)
+Factor b23 := Binary(x2,x3)
+
+Label x1 $x_1$
+Label x2 $x_2$
+Label x3 $x_3$
+
+IsMarkovChain3(x1,x2,x3) -- Chain of 3 variables connect by binary factors, horizontally aligned
+MarkovChainPrior(p1,x1)
+
+Label p1 $p(x_1)$
+Label m1 $l(x_1;z_1)$
+Label b23 $p(x_3|x_2)$
+
+HasBubble(p1)
+HasBubble(m1)
+HasBubble(b23)
+
+

@@ -651,15 +651,31 @@ export const constrDict = {
   /**
    * Require that the value `x` is in the range defined by `[x0, x1]`.
    */
-  inRange: (x: VarAD, x0: VarAD, x1: VarAD) => {
+  inRange: (x: VarAD, x0: VarAD, x1: VarAD): VarAD => {
     return mul(sub(x, x0), sub(x, x1));
   },
 
   /**
-   * Require that the value `x` is less than the value `y`
+   * Require that the value `x` is non-negative.
    */
-  equal: (x: VarAD, y: VarAD) => {
+  nonNegative: (x: VarAD): VarAD => {
+    return neg(x);
+  },
+
+  /**
+   * Require that the value `x` is equal to the value `y`
+   */
+  equal: (x: VarAD, y: VarAD): VarAD => {
     return equalHard(x, y);
+  },
+
+  /**
+   * Require that the 2-vector `x` is equal to the value `y`
+   */
+  equal2: (x: VarAD[], y: VarAD[]): VarAD => {
+    if (x.length !== 2 || y.length !== 2)
+      throw Error("x and y need to be two-vectors");
+    return add(equalHard(x[0], y[0]), equalHard(x[1], y[1]));
   },
 
   /**

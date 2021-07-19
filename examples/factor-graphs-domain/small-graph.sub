@@ -1,0 +1,4 @@
+-- A small graph example
+Variable A, B
+Factor f := Binary(A,B)
+AutoLabel All

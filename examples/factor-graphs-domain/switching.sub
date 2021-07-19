@@ -1,0 +1,38 @@
+-- Switching example (Fig 2b in Dellaert21ar)
+
+Variable q1,q2
+Factor p1 := Unary(q1)
+Factor bq := Binary(q1,q2)
+
+MarkovChainPrior(p1,q1)
+IsMarkovChain2(q1,q2) -- Chain of 2 variables connect by binary factors, horizontally aligned
+
+Variable x1,x2,x3
+Factor m1 := Unary(x1)
+Factor m2 := Unary(x2)
+Factor m3 := Unary(x3)
+
+Factor b12 := Ternary(x1,q1,x2)
+Factor b23 := Ternary(x2,q2,x3)
+
+IsMarkovChain3(x1,x2,x3) -- Chain of 3 variables connect by binary factors, horizontally aligned
+Factor p2 := Unary(x1)
+MarkovChainPrior(p2,x1)
+
+AutoLabel All
+
+-- Label q1 $q_1$
+-- Label q2 $q_2$
+
+-- Label x1 $x_1$
+-- Label x2 $x_2$
+-- Label x3 $x_3$
+
+Label p1 $p(q_1)$
+Label bq $p(q_2;q_1)$
+Label b23 $p(x_3|x_2)$
+
+HasBubble(p1)
+HasBubble(bq)
+HasBubble(b23)
+
